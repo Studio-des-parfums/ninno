@@ -4,7 +4,9 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    # Type MIME requis pour que le navigateur compile le WebAssembly en streaming
+    # Types MIME : la liste standard (html, js, css, images...) + wasm.
+    # Attention : un bloc "types" seul REMPLACE toute la liste, d'où l'include.
+    include /etc/nginx/mime.types;
     types {
         application/wasm wasm;
     }
