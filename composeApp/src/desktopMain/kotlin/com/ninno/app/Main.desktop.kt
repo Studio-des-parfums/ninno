@@ -1,0 +1,16 @@
+package com.ninno.app
+
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
+
+fun main() = application {
+    Window(
+        onCloseRequest = ::exitApplication,
+        title = "Ninno",
+        state = rememberWindowState(width = 900.dp, height = 700.dp)
+    ) {
+        App(versionName = "1.5")
+    }
+}

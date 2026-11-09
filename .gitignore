@@ -13,3 +13,5 @@ app/build/
 backend/
 backoffice/
 node_modules/
+.kotlin/
+build/

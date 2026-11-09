@@ -56,6 +56,7 @@ fun FinalScreen(
     val useStackedLayout = rememberUseStackedLayout()
     val buttonSize = navButtonSizeFor(deviceSize)
     val screenPadding = screenPaddingFor(deviceSize)
+    val logoWidth = logoWidthFor(deviceSize, isLandscape)
 
     val cardMaxWidth = when (deviceSize) {
         DeviceSize.COMPACT -> 360.dp
@@ -77,7 +78,6 @@ fun FinalScreen(
         DeviceSize.MEDIUM -> 32.dp
         DeviceSize.EXPANDED -> 40.dp
     }
-    val logoWidth = logoWidthFor(deviceSize, isLandscape)
 
     ScreenBackground(backgroundRes = R.drawable.bg_home2, backgroundUrl = backgroundUrl, modifier = Modifier.fillMaxSize()) {
         Column(

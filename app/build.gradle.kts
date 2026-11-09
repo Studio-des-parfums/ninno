@@ -11,8 +11,8 @@ android {
         applicationId = "com.ninno.app"
         minSdk = 28
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.4"
+        versionCode = 2
+        versionName = "1.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
