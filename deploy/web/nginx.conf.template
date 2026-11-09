@@ -1,0 +1,24 @@
+server {
+    listen ${PORT};
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Type MIME requis pour que le navigateur compile le WebAssembly en streaming
+    types {
+        application/wasm wasm;
+    }
+
+    gzip on;
+    gzip_types application/javascript application/wasm text/css application/json;
+    gzip_min_length 1024;
+
+    # La page d'entrée ne doit pas rester en cache (sinon les mises à jour n'apparaissent pas)
+    location = /index.html {
+        add_header Cache-Control "no-cache";
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
