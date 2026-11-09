@@ -5,11 +5,13 @@ import android.media.SoundPool
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,13 +30,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -47,17 +57,18 @@ import coil.compose.AsyncImage
 import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
 import com.ninno.app.ui.DeviceSize
+import com.ninno.app.ui.FamilyDayLogo
 import com.ninno.app.ui.NavBackButton
 import com.ninno.app.ui.NavForwardButton
-import com.ninno.app.ui.FamilyDayLogo
 import com.ninno.app.ui.ScreenBackground
-import com.ninno.app.ui.navButtonSizeFor
 import com.ninno.app.ui.logoWidthFor
+import com.ninno.app.ui.navButtonSizeFor
 import com.ninno.app.ui.rememberDeviceSize
 import com.ninno.app.ui.rememberIsLandscape
 import com.ninno.app.ui.rememberUseStackedLayout
 import com.ninno.app.ui.screenPaddingFor
 import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
 
 data class PerfumeNote(
     val name: String,
@@ -97,6 +108,8 @@ val baseNotes = listOf(
 
 private data class PendingSort(val note: DisplayNote, val liked: Boolean)
 
+private enum class DragSource { GRID, LIKED, DISLIKED }
+
 @Composable
 fun SortingScreen(
     title: String,
@@ -112,17 +125,17 @@ fun SortingScreen(
     val useStackedLayout = rememberUseStackedLayout()
     val buttonSize = navButtonSizeFor(deviceSize)
     val screenPadding = screenPaddingFor(deviceSize)
+    val logoWidth = logoWidthFor(deviceSize, isLandscape) * 0.55f
 
     val titleSize = when (deviceSize) {
-        DeviceSize.COMPACT -> if (useStackedLayout) 20.sp else 24.sp
-        DeviceSize.MEDIUM -> 30.sp
-        DeviceSize.EXPANDED -> 38.sp
+        DeviceSize.COMPACT -> if (useStackedLayout) 15.sp else 18.sp
+        DeviceSize.MEDIUM -> 22.sp
+        DeviceSize.EXPANDED -> 28.sp
     }
-    val logoWidth = logoWidthFor(deviceSize, isLandscape)
     val sectionSpacing = when (deviceSize) {
-        DeviceSize.COMPACT -> 16.dp
-        DeviceSize.MEDIUM -> 20.dp
-        DeviceSize.EXPANDED -> 28.dp
+        DeviceSize.COMPACT -> 10.dp
+        DeviceSize.MEDIUM -> 14.dp
+        DeviceSize.EXPANDED -> 20.dp
     }
     val gridPadding = when (deviceSize) {
         DeviceSize.COMPACT -> if (useStackedLayout) 8.dp else 12.dp
@@ -138,24 +151,30 @@ fun SortingScreen(
     )
 
     val maxGridImageSize = when (deviceSize) {
-        DeviceSize.COMPACT -> if (useStackedLayout) 90.dp else 70.dp
-        DeviceSize.MEDIUM -> 110.dp
-        DeviceSize.EXPANDED -> 130.dp
+        DeviceSize.COMPACT -> if (useStackedLayout) 86.dp else 68.dp
+        DeviceSize.MEDIUM -> 106.dp
+        DeviceSize.EXPANDED -> 126.dp
     }
 
     val choiceImageSize = when (deviceSize) {
-        DeviceSize.COMPACT -> if (useStackedLayout) 75.dp else 55.dp
-        DeviceSize.MEDIUM -> 90.dp
-        DeviceSize.EXPANDED -> 110.dp
+        DeviceSize.COMPACT -> if (useStackedLayout) 70.dp else 52.dp
+        DeviceSize.MEDIUM -> 86.dp
+        DeviceSize.EXPANDED -> 106.dp
     }
 
     var likedNotes by remember(notes) { mutableStateOf(listOf<DisplayNote>()) }
     var dislikedNotes by remember(notes) { mutableStateOf(listOf<DisplayNote>()) }
     var pendingSort by remember(notes) { mutableStateOf<PendingSort?>(null) }
+    var draggedNote by remember { mutableStateOf<DisplayNote?>(null) }
+    var dragSource by remember { mutableStateOf<DragSource?>(null) }
+    var dragPosition by remember { mutableStateOf(Offset.Zero) }
+    var likedBounds by remember { mutableStateOf<Rect?>(null) }
+    var dislikedBounds by remember { mutableStateOf<Rect?>(null) }
     val selectedNotes = likedNotes + dislikedNotes
     val pendingNote = pendingSort?.note
     val remainingNotes = notes.filterNot { it in selectedNotes || it == pendingNote }
 
+    val density = LocalDensity.current
     val context = LocalContext.current
     val soundPool = remember {
         SoundPool.Builder()
@@ -178,6 +197,58 @@ fun SortingScreen(
         onSelectionChanged(likedNotes.map { it.name }, dislikedNotes.map { it.name })
     }
 
+    fun handleNoteDrop(note: DisplayNote, liked: Boolean) {
+        if (pendingSort == null) {
+            if (liked && likedNotes.size < 2) {
+                pendingSort = PendingSort(note, liked = true)
+            } else if (!liked && dislikedNotes.size < 2) {
+                pendingSort = PendingSort(note, liked = false)
+            }
+        }
+    }
+
+    fun endDrag() {
+        val note = draggedNote
+        if (note != null) {
+            val overLiked = likedBounds?.contains(dragPosition) == true
+            val overDisliked = dislikedBounds?.contains(dragPosition) == true
+            when (dragSource) {
+                DragSource.GRID -> when {
+                    overLiked -> handleNoteDrop(note, liked = true)
+                    overDisliked -> handleNoteDrop(note, liked = false)
+                }
+                DragSource.LIKED -> when {
+                    overDisliked -> if (pendingSort == null && dislikedNotes.size < 2) {
+                        likedNotes = likedNotes - note
+                        pendingSort = PendingSort(note, liked = false)
+                    }
+                    !overLiked -> {
+                        likedNotes = likedNotes - note
+                        notifySelectionChanged()
+                    }
+                    else -> {}
+                }
+                DragSource.DISLIKED -> when {
+                    overLiked -> if (pendingSort == null && likedNotes.size < 2) {
+                        dislikedNotes = dislikedNotes - note
+                        pendingSort = PendingSort(note, liked = true)
+                    }
+                    !overDisliked -> {
+                        dislikedNotes = dislikedNotes - note
+                        notifySelectionChanged()
+                    }
+                    else -> {}
+                }
+                null -> {}
+            }
+        }
+        draggedNote = null
+        dragSource = null
+    }
+
+    val isOverLiked = draggedNote != null && likedBounds?.contains(dragPosition) == true
+    val isOverDisliked = draggedNote != null && dislikedBounds?.contains(dragPosition) == true
+
     pendingSort?.let { pending ->
         LaunchedEffect(pending.note) {
             soundPool.play(if (pending.liked) happySoundId else sadSoundId, 1f, 1f, 1, 0, 1f)
@@ -196,32 +267,15 @@ fun SortingScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = screenPadding, vertical = screenPadding),
+                .padding(horizontal = screenPadding, vertical = screenPadding)
+                .padding(bottom = buttonSize + sectionSpacing),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = sectionSpacing),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                NavBackButton(
-                    onClick = onBackClick,
-                    size = buttonSize
-                )
-
-                FamilyDayLogo(width = logoWidth, logoUrl = logoUrl)
-
-                if (selectedNotes.size >= 4) {
-                    NavForwardButton(
-                        onClick = onNextClick,
-                        size = buttonSize
-                    )
-                } else {
-                    Spacer(modifier = Modifier.size(buttonSize))
-                }
-            }
+            FamilyDayLogo(
+                width = logoWidth,
+                logoUrl = logoUrl,
+                modifier = Modifier.padding(bottom = sectionSpacing / 2)
+            )
 
             Text(
                 text = title,
@@ -253,9 +307,23 @@ fun SortingScreen(
                                 }
                             }
                         },
+                        onDragStart = { note, startPosition ->
+                            draggedNote = note
+                            dragSource = DragSource.GRID
+                            dragPosition = startPosition
+                        },
+                        onDrag = { dragAmount ->
+                            dragPosition += dragAmount
+                        },
+                        onDragEnd = { endDrag() },
+                        onDragCancel = {
+                            draggedNote = null
+                            dragSource = null
+                        },
                         noteLabelSize = noteLabelSize,
                         compact = true,
                         maxImageSize = maxGridImageSize,
+                        draggedNote = draggedNote,
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1.4f)
@@ -269,32 +337,92 @@ fun SortingScreen(
                             .padding(horizontal = gridPadding),
                         horizontalArrangement = Arrangement.spacedBy(sectionSpacing)
                     ) {
-                        ColorSection(
-                            color = Color(0xFF4CAF50).copy(alpha = 0.75f),
-                            notes = likedNotes,
-                            useHappyImage = true,
-                            imageSize = choiceImageSize,
-                            onNoteClick = { note ->
-                                likedNotes = likedNotes - note
-                                notifySelectionChanged()
-                            },
+                        Column(
                             modifier = Modifier
                                 .weight(1f)
-                                .fillMaxHeight()
-                        )
-                        ColorSection(
-                            color = Color(0xFFE53935).copy(alpha = 0.75f),
-                            notes = dislikedNotes,
-                            useHappyImage = false,
-                            imageSize = choiceImageSize,
-                            onNoteClick = { note ->
-                                dislikedNotes = dislikedNotes - note
-                                notifySelectionChanged()
-                            },
+                                .fillMaxHeight(),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "J'aime",
+                                color = Color.White,
+                                fontSize = (noteLabelSize.value * 1.2f).sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.SansSerif,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            ColorSection(
+                                color = Color(0xFF4CAF50).copy(alpha = 0.75f),
+                                notes = likedNotes,
+                                useHappyImage = true,
+                                imageSize = choiceImageSize,
+                                onNoteClick = { note ->
+                                    likedNotes = likedNotes - note
+                                    notifySelectionChanged()
+                                },
+                                isDragOver = isOverLiked,
+                                onBoundsChanged = { likedBounds = it },
+                                hiddenNote = if (dragSource == DragSource.LIKED) draggedNote else null,
+                                onDragStart = { note, startPosition ->
+                                    draggedNote = note
+                                    dragSource = DragSource.LIKED
+                                    dragPosition = startPosition
+                                },
+                                onDrag = { dragAmount -> dragPosition += dragAmount },
+                                onDragEnd = { endDrag() },
+                                onDragCancel = {
+                                    draggedNote = null
+                                    dragSource = null
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f)
+                            )
+                        }
+                        Column(
                             modifier = Modifier
                                 .weight(1f)
-                                .fillMaxHeight()
-                        )
+                                .fillMaxHeight(),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "Je n'aime pas",
+                                color = Color.White,
+                                fontSize = (noteLabelSize.value * 1.2f).sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.SansSerif,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            ColorSection(
+                                color = Color(0xFFE53935).copy(alpha = 0.75f),
+                                notes = dislikedNotes,
+                                useHappyImage = false,
+                                imageSize = choiceImageSize,
+                                onNoteClick = { note ->
+                                    dislikedNotes = dislikedNotes - note
+                                    notifySelectionChanged()
+                                },
+                                isDragOver = isOverDisliked,
+                                onBoundsChanged = { dislikedBounds = it },
+                                hiddenNote = if (dragSource == DragSource.DISLIKED) draggedNote else null,
+                                onDragStart = { note, startPosition ->
+                                    draggedNote = note
+                                    dragSource = DragSource.DISLIKED
+                                    dragPosition = startPosition
+                                },
+                                onDrag = { dragAmount -> dragPosition += dragAmount },
+                                onDragEnd = { endDrag() },
+                                onDragCancel = {
+                                    draggedNote = null
+                                    dragSource = null
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f)
+                            )
+                        }
                     }
                 }
             } else {
@@ -315,9 +443,23 @@ fun SortingScreen(
                                 }
                             }
                         },
+                        onDragStart = { note, startPosition ->
+                            draggedNote = note
+                            dragSource = DragSource.GRID
+                            dragPosition = startPosition
+                        },
+                        onDrag = { dragAmount ->
+                            dragPosition += dragAmount
+                        },
+                        onDragEnd = { endDrag() },
+                        onDragCancel = {
+                            draggedNote = null
+                            dragSource = null
+                        },
                         noteLabelSize = noteLabelSize,
                         compact = false,
                         maxImageSize = maxGridImageSize,
+                        draggedNote = draggedNote,
                         modifier = Modifier
                             .weight(2f)
                             .padding(gridPadding)
@@ -329,34 +471,128 @@ fun SortingScreen(
                             .padding(gridPadding),
                         verticalArrangement = Arrangement.spacedBy(sectionSpacing)
                     ) {
-                        ColorSection(
-                            color = Color(0xFF4CAF50).copy(alpha = 0.75f),
-                            notes = likedNotes,
-                            useHappyImage = true,
-                            imageSize = choiceImageSize,
-                            onNoteClick = { note ->
-                                likedNotes = likedNotes - note
-                                notifySelectionChanged()
-                            },
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .weight(1f)
-                        )
-                        ColorSection(
-                            color = Color(0xFFE53935).copy(alpha = 0.75f),
-                            notes = dislikedNotes,
-                            useHappyImage = false,
-                            imageSize = choiceImageSize,
-                            onNoteClick = { note ->
-                                dislikedNotes = dislikedNotes - note
-                                notifySelectionChanged()
-                            },
+                                .weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "J'aime",
+                                color = Color.White,
+                                fontSize = (noteLabelSize.value * 1.2f).sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.SansSerif,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            ColorSection(
+                                color = Color(0xFF4CAF50).copy(alpha = 0.75f),
+                                notes = likedNotes,
+                                useHappyImage = true,
+                                imageSize = choiceImageSize,
+                                onNoteClick = { note ->
+                                    likedNotes = likedNotes - note
+                                    notifySelectionChanged()
+                                },
+                                isDragOver = isOverLiked,
+                                onBoundsChanged = { likedBounds = it },
+                                hiddenNote = if (dragSource == DragSource.LIKED) draggedNote else null,
+                                onDragStart = { note, startPosition ->
+                                    draggedNote = note
+                                    dragSource = DragSource.LIKED
+                                    dragPosition = startPosition
+                                },
+                                onDrag = { dragAmount -> dragPosition += dragAmount },
+                                onDragEnd = { endDrag() },
+                                onDragCancel = {
+                                    draggedNote = null
+                                    dragSource = null
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f)
+                            )
+                        }
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .weight(1f)
-                        )
+                                .weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "Je n'aime pas",
+                                color = Color.White,
+                                fontSize = (noteLabelSize.value * 1.2f).sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.SansSerif,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            ColorSection(
+                                color = Color(0xFFE53935).copy(alpha = 0.75f),
+                                notes = dislikedNotes,
+                                useHappyImage = false,
+                                imageSize = choiceImageSize,
+                                onNoteClick = { note ->
+                                    dislikedNotes = dislikedNotes - note
+                                    notifySelectionChanged()
+                                },
+                                isDragOver = isOverDisliked,
+                                onBoundsChanged = { dislikedBounds = it },
+                                hiddenNote = if (dragSource == DragSource.DISLIKED) draggedNote else null,
+                                onDragStart = { note, startPosition ->
+                                    draggedNote = note
+                                    dragSource = DragSource.DISLIKED
+                                    dragPosition = startPosition
+                                },
+                                onDrag = { dragAmount -> dragPosition += dragAmount },
+                                onDragEnd = { endDrag() },
+                                onDragCancel = {
+                                    draggedNote = null
+                                    dragSource = null
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f)
+                            )
+                        }
                     }
                 }
+            }
+        }
+
+        draggedNote?.let { note ->
+            var overlayOrigin by remember { mutableStateOf(Offset.Zero) }
+            val ghostSizePx = with(density) { choiceImageSize.toPx() }
+            val ghostRemoteUrl = when (dragSource) {
+                DragSource.LIKED -> note.happyImageUrl
+                DragSource.DISLIKED -> note.sadImageUrl
+                else -> note.imageUrl
+            }
+            val ghostFallbackRes = when (dragSource) {
+                DragSource.LIKED -> note.fallback?.happyImageRes
+                DragSource.DISLIKED -> note.fallback?.sadImageRes
+                else -> note.fallback?.imageRes
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .onGloballyPositioned { overlayOrigin = it.positionInRoot() }
+            ) {
+                NoteImage(
+                    remoteUrl = ghostRemoteUrl,
+                    fallbackRes = ghostFallbackRes,
+                    contentDescription = note.name,
+                    modifier = Modifier
+                        .offset {
+                            val topLeft = dragPosition - overlayOrigin -
+                                Offset(ghostSizePx / 2f, ghostSizePx / 2f)
+                            IntOffset(topLeft.x.roundToInt(), topLeft.y.roundToInt())
+                        }
+                        .size(choiceImageSize)
+                        .clip(RoundedCornerShape(12.dp))
+                )
             }
         }
 
@@ -410,6 +646,24 @@ fun SortingScreen(
                 }
             }
         }
+
+        NavBackButton(
+            onClick = onBackClick,
+            size = buttonSize,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(screenPadding)
+        )
+
+        if (selectedNotes.size >= 4) {
+            NavForwardButton(
+                onClick = onNextClick,
+                size = buttonSize,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(screenPadding)
+            )
+        }
     }
 }
 
@@ -446,9 +700,14 @@ private fun NoteImage(
 private fun PerfumeButtonGrid(
     notes: List<DisplayNote>,
     onNoteClick: (DisplayNote) -> Unit,
+    onDragStart: (DisplayNote, Offset) -> Unit,
+    onDrag: (Offset) -> Unit,
+    onDragEnd: () -> Unit,
+    onDragCancel: () -> Unit,
     noteLabelSize: TextUnit,
     compact: Boolean,
     maxImageSize: Dp,
+    draggedNote: DisplayNote?,
     modifier: Modifier = Modifier
 ) {
     val gridSpacing = if (compact) 8.dp else 12.dp
@@ -478,17 +737,45 @@ private fun PerfumeButtonGrid(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         if (note != null) {
-                            NoteImage(
-                                remoteUrl = note.imageUrl,
-                                fallbackRes = note.fallback?.imageRes,
-                                contentDescription = note.name,
+                            val isBeingDragged = draggedNote == note
+                            var itemPosition by remember(note) { mutableStateOf(Offset.Zero) }
+                            Box(
                                 modifier = Modifier
                                     .widthIn(max = maxImageSize)
                                     .fillMaxWidth()
                                     .aspectRatio(1f)
                                     .clip(RoundedCornerShape(16.dp))
-                                    .clickable { onNoteClick(note) }
-                            )
+                                    .onGloballyPositioned { itemPosition = it.positionInRoot() }
+                                    .pointerInput(note) {
+                                        detectDragGestures(
+                                            onDragStart = { startOffset ->
+                                                onDragStart(note, itemPosition + startOffset)
+                                            },
+                                            onDrag = { change, dragAmount ->
+                                                change.consume()
+                                                onDrag(dragAmount)
+                                            },
+                                            onDragEnd = {
+                                                onDragEnd()
+                                            },
+                                            onDragCancel = {
+                                                onDragCancel()
+                                            }
+                                        )
+                                    }
+                            ) {
+                                if (!isBeingDragged) {
+                                    NoteImage(
+                                        remoteUrl = note.imageUrl,
+                                        fallbackRes = note.fallback?.imageRes,
+                                        contentDescription = note.name,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .fillMaxHeight()
+                                            .clickable { onNoteClick(note) }
+                                    )
+                                }
+                            }
                             Text(
                                 text = note.name,
                                 color = Color(0xFF2B2B2B),
@@ -520,12 +807,20 @@ private fun ColorSection(
     useHappyImage: Boolean,
     imageSize: Dp,
     onNoteClick: (DisplayNote) -> Unit,
+    isDragOver: Boolean,
+    onBoundsChanged: (Rect) -> Unit,
+    hiddenNote: DisplayNote?,
+    onDragStart: (DisplayNote, Offset) -> Unit,
+    onDrag: (Offset) -> Unit,
+    onDragEnd: () -> Unit,
+    onDragCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier
+            .onGloballyPositioned { onBoundsChanged(it.boundsInRoot()) }
             .clip(RoundedCornerShape(24.dp))
-            .background(color)
+            .background(if (isDragOver) color.copy(alpha = 1f) else color)
             .padding(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
@@ -533,15 +828,37 @@ private fun ColorSection(
         notes.forEach { note ->
             val remoteUrl = if (useHappyImage) note.happyImageUrl else note.sadImageUrl
             val fallbackRes = if (useHappyImage) note.fallback?.happyImageRes else note.fallback?.sadImageRes
-            NoteImage(
-                remoteUrl = remoteUrl,
-                fallbackRes = fallbackRes,
-                contentDescription = note.name,
+            var itemPosition by remember(note) { mutableStateOf(Offset.Zero) }
+            Box(
                 modifier = Modifier
                     .size(imageSize)
                     .clip(RoundedCornerShape(12.dp))
-                    .clickable { onNoteClick(note) }
-            )
+                    .onGloballyPositioned { itemPosition = it.positionInRoot() }
+                    .pointerInput(note) {
+                        detectDragGestures(
+                            onDragStart = { startOffset ->
+                                onDragStart(note, itemPosition + startOffset)
+                            },
+                            onDrag = { change, dragAmount ->
+                                change.consume()
+                                onDrag(dragAmount)
+                            },
+                            onDragEnd = { onDragEnd() },
+                            onDragCancel = { onDragCancel() }
+                        )
+                    }
+            ) {
+                if (note != hiddenNote) {
+                    NoteImage(
+                        remoteUrl = remoteUrl,
+                        fallbackRes = fallbackRes,
+                        contentDescription = note.name,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable { onNoteClick(note) }
+                    )
+                }
+            }
         }
     }
 }

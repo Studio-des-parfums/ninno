@@ -38,6 +38,7 @@ fun CardScreen(
     val isLandscape = rememberIsLandscape()
     val buttonSize = navButtonSizeFor(deviceSize)
     val screenPadding = screenPaddingFor(deviceSize)
+    val logoWidth = logoWidthFor(deviceSize, isLandscape)
 
     val cardMaxWidth = when (deviceSize) {
         DeviceSize.COMPACT -> 360.dp
@@ -54,7 +55,6 @@ fun CardScreen(
         DeviceSize.MEDIUM -> 32.dp
         DeviceSize.EXPANDED -> 40.dp
     }
-    val logoWidth = logoWidthFor(deviceSize, isLandscape)
 
     ScreenBackground(backgroundRes = backgroundRes, backgroundUrl = backgroundUrl, modifier = Modifier.fillMaxSize()) {
         Column(
@@ -63,29 +63,11 @@ fun CardScreen(
                 .padding(screenPadding),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                NavBackButton(
-                    onClick = onBackClick,
-                    size = buttonSize
-                )
-
-                FamilyDayLogo(width = logoWidth, logoUrl = logoUrl)
-
-                if (onNextClick != null) {
-                    NavForwardButton(
-                        onClick = onNextClick,
-                        size = buttonSize
-                    )
-                } else {
-                    Spacer(modifier = Modifier.size(buttonSize))
-                }
-            }
+            FamilyDayLogo(
+                width = logoWidth,
+                logoUrl = logoUrl,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
 
             Box(
                 modifier = Modifier
@@ -111,6 +93,24 @@ fun CardScreen(
                     )
                 }
             }
+        }
+
+        NavBackButton(
+            onClick = onBackClick,
+            size = buttonSize,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(screenPadding)
+        )
+
+        if (onNextClick != null) {
+            NavForwardButton(
+                onClick = onNextClick,
+                size = buttonSize,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(screenPadding)
+            )
         }
     }
 }
