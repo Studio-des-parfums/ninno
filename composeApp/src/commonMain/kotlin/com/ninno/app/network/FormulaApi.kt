@@ -13,7 +13,6 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-private const val BASE_URL = "https://backend-ninno-production.up.railway.app"
 
 @Serializable
 data class NoteChoiceDto(
