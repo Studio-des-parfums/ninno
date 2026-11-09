@@ -4,12 +4,10 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    # Types MIME : la liste standard (html, js, css, images...) + wasm.
-    # Attention : un bloc "types" seul REMPLACE toute la liste, d'où l'include.
+    # Types MIME standard (html, js, css, images, wasm...).
+    # Ne pas ajouter de bloc "types { }" ici : il remplacerait toute la liste
+    # et le navigateur téléchargerait les pages au lieu de les afficher.
     include /etc/nginx/mime.types;
-    types {
-        application/wasm wasm;
-    }
 
     gzip on;
     gzip_types application/javascript application/wasm text/css application/json;
