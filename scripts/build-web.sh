@@ -4,6 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+rm -rf composeApp/build/dist/wasmJs composeApp/build/kotlin-webpack/wasmJs  # évite que d anciens .wasm s accumulent
 ./gradlew :composeApp:wasmJsBrowserDistribution
 
 OUT=composeApp/build/dist/wasmJs/productionExecutable

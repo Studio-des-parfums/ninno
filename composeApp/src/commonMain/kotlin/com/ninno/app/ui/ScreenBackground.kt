@@ -72,7 +72,10 @@ fun screenPaddingFor(deviceSize: DeviceSize): Dp = when (deviceSize) {
     DeviceSize.EXPANDED -> 24.dp
 }
 
-/** URL du logo partenaire (configuré dans sdp-dashboard). null = aucun logo affiché. */
+/** Logo principal, en haut à droite (sdp-dashboard → « Logo »). null = rien d'affiché. */
+val LocalLogoUrl = staticCompositionLocalOf<String?> { null }
+
+/** Logo partenaire, en haut au centre (sdp-dashboard → « Logo partenaire »). null = rien d'affiché. */
 val LocalPartnerLogoUrl = staticCompositionLocalOf<String?> { null }
 
 @Composable
@@ -101,11 +104,12 @@ fun ScreenBackground(
                 modifier = Modifier.fillMaxSize()
             )
         }
-        val partnerLogoUrl = LocalPartnerLogoUrl.current
-        if (partnerLogoUrl != null) {
+        // Logo principal en haut à droite (configuré dans sdp-dashboard) ; rien s'il est vide
+        val logoUrl = LocalLogoUrl.current
+        if (logoUrl != null) {
             AsyncImage(
-                model = partnerLogoUrl,
-                contentDescription = "Logo partenaire",
+                model = logoUrl,
+                contentDescription = "Logo",
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
                     .align(Alignment.TopEnd)

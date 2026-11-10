@@ -63,9 +63,8 @@ fun CardScreen(
                 .padding(screenPadding),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            FamilyDayLogo(
+            PartnerLogo(
                 width = logoWidth,
-                logoUrl = logoUrl,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
