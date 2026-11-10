@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -11,6 +12,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.ninno.app.ui.LocalPartnerLogoUrl
 import com.ninno.app.ui.theme.NinnoTheme
 
 private object Routes {
@@ -47,6 +49,8 @@ fun App(versionName: String) {
             val displayBaseNotes = content?.baseNotes ?: baseNotes.toDisplayNotes()
 
             val navController = rememberNavController()
+            // Logo partenaire (en haut à droite), lu par ScreenBackground sur tous les écrans
+            CompositionLocalProvider(LocalPartnerLogoUrl provides content?.partnerLogoUrl) {
             NavHost(navController = navController, startDestination = Routes.HOME) {
                 composable(Routes.HOME) {
                     HomeScreen(
@@ -148,6 +152,7 @@ fun App(versionName: String) {
                         logoUrl = logoUrl
                     )
                 }
+            }
             }
         }
     }

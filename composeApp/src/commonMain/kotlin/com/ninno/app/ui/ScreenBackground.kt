@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -17,7 +18,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.ninno.app.resources.Res
-import com.ninno.app.resources.logo_oreal
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
@@ -72,6 +72,9 @@ fun screenPaddingFor(deviceSize: DeviceSize): Dp = when (deviceSize) {
     DeviceSize.EXPANDED -> 24.dp
 }
 
+/** URL du logo partenaire (configuré dans sdp-dashboard). null = aucun logo affiché. */
+val LocalPartnerLogoUrl = staticCompositionLocalOf<String?> { null }
+
 @Composable
 fun ScreenBackground(
     backgroundRes: DrawableResource,
@@ -98,15 +101,18 @@ fun ScreenBackground(
                 modifier = Modifier.fillMaxSize()
             )
         }
-        Image(
-            painter = painterResource(Res.drawable.logo_oreal),
-            contentDescription = "L'Oréal",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 12.dp, end = 12.dp)
-                .width(130.dp)
-        )
+        val partnerLogoUrl = LocalPartnerLogoUrl.current
+        if (partnerLogoUrl != null) {
+            AsyncImage(
+                model = partnerLogoUrl,
+                contentDescription = "Logo partenaire",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 12.dp, end = 12.dp)
+                    .width(130.dp)
+            )
+        }
         content()
     }
 }
