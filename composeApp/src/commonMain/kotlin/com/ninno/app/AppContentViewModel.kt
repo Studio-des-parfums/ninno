@@ -50,6 +50,8 @@ class AppContentViewModel : ViewModel() {
             content.backgroundUrl?.let { urls.add(it) }
             content.backgroundOtherUrl?.let { urls.add(it) }
             content.logoUrl?.let { urls.add(it) }
+            content.partnerLogoUrl?.let { urls.add(it) }
+            content.mascotUrl?.let { urls.add(it) }
 
             // Note images & animations
             val allNotes = content.topNotes + content.heartNotes + content.baseNotes

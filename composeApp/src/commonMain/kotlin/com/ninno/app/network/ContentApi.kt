@@ -10,7 +10,8 @@ data class RemoteAppConfig(
     val backgroundImageUrl: String? = null,
     val backgroundOtherImageUrl: String? = null,
     val logoImageUrl: String? = null,
-    val partnerLogoImageUrl: String? = null
+    val partnerLogoImageUrl: String? = null,
+    val mascotImageUrl: String? = null
 )
 
 @Serializable

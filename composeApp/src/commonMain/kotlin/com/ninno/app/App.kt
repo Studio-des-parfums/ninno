@@ -13,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.ninno.app.ui.LocalLogoUrl
+import com.ninno.app.ui.LocalMascotUrl
 import com.ninno.app.ui.LocalPartnerLogoUrl
 import com.ninno.app.ui.theme.NinnoTheme
 
@@ -53,7 +54,8 @@ fun App(versionName: String) {
             // Logos configurés dans sdp-dashboard, lus par ScreenBackground / PartnerLogo
             CompositionLocalProvider(
                 LocalLogoUrl provides content?.logoUrl,
-                LocalPartnerLogoUrl provides content?.partnerLogoUrl
+                LocalPartnerLogoUrl provides content?.partnerLogoUrl,
+                LocalMascotUrl provides content?.mascotUrl
             ) {
             NavHost(navController = navController, startDestination = Routes.HOME) {
                 composable(Routes.HOME) {

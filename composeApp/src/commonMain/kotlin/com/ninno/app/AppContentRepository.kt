@@ -21,6 +21,8 @@ data class AppContent(
     val logoUrl: String?,
     /** Logo partenaire en haut à droite (null = rien n'est affiché). */
     val partnerLogoUrl: String?,
+    /** Mascotte (taupe) au centre ; null = image locale par défaut. */
+    val mascotUrl: String?,
     val topNotes: List<DisplayNote>,
     val heartNotes: List<DisplayNote>,
     val baseNotes: List<DisplayNote>
@@ -63,6 +65,7 @@ private val localFallbackContent = AppContent(
     backgroundOtherUrl = null,
     logoUrl = null,
     partnerLogoUrl = null,
+    mascotUrl = null,
     topNotes = topNotes.toDisplayNotes(),
     heartNotes = heartNotes.toDisplayNotes(),
     baseNotes = baseNotes.toDisplayNotes()
@@ -91,6 +94,7 @@ object AppContentRepository {
                 backgroundOtherUrl = config.backgroundOtherImageUrl?.takeIf { it.isNotBlank() },
                 logoUrl = config.logoImageUrl?.takeIf { it.isNotBlank() },
                 partnerLogoUrl = config.partnerLogoImageUrl?.takeIf { it.isNotBlank() },
+                mascotUrl = config.mascotImageUrl?.takeIf { it.isNotBlank() },
                 topNotes = remoteTop.ifEmpty { localFallbackContent.topNotes },
                 heartNotes = remoteHeart.ifEmpty { localFallbackContent.heartNotes },
                 baseNotes = remoteBase.ifEmpty { localFallbackContent.baseNotes }

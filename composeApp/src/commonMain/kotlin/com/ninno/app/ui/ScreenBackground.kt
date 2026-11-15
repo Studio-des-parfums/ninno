@@ -78,6 +78,9 @@ val LocalLogoUrl = staticCompositionLocalOf<String?> { null }
 /** Logo partenaire, en haut au centre (sdp-dashboard → « Logo partenaire »). null = rien d'affiché. */
 val LocalPartnerLogoUrl = staticCompositionLocalOf<String?> { null }
 
+/** Mascotte (taupe) configurée côté backend. null = image locale par défaut. */
+val LocalMascotUrl = staticCompositionLocalOf<String?> { null }
+
 @Composable
 fun ScreenBackground(
     backgroundRes: DrawableResource,
