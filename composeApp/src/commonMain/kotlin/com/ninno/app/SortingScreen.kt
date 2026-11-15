@@ -137,7 +137,7 @@ import com.ninno.app.resources.note_vanille
 import com.ninno.app.resources.note_vanille_happy
 import com.ninno.app.resources.note_vanille_sad
 import com.ninno.app.ui.DeviceSize
-import com.ninno.app.ui.FamilyDayLogo
+import com.ninno.app.ui.PartnerLogo
 import com.ninno.app.ui.NavBackButton
 import com.ninno.app.ui.NavForwardButton
 import com.ninno.app.ui.ScreenBackground
@@ -342,9 +342,8 @@ fun SortingScreen(
                 .padding(bottom = buttonSize + sectionSpacing),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            FamilyDayLogo(
+            PartnerLogo(
                 width = logoWidth,
-                logoUrl = logoUrl,
                 modifier = Modifier.padding(bottom = sectionSpacing / 2)
             )
 

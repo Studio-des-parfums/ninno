@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -17,7 +18,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.ninno.app.resources.Res
-import com.ninno.app.resources.logo_oreal
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
@@ -72,6 +72,15 @@ fun screenPaddingFor(deviceSize: DeviceSize): Dp = when (deviceSize) {
     DeviceSize.EXPANDED -> 24.dp
 }
 
+/** Logo principal, en haut à droite (sdp-dashboard → « Logo »). null = rien d'affiché. */
+val LocalLogoUrl = staticCompositionLocalOf<String?> { null }
+
+/** Logo partenaire, en haut au centre (sdp-dashboard → « Logo partenaire »). null = rien d'affiché. */
+val LocalPartnerLogoUrl = staticCompositionLocalOf<String?> { null }
+
+/** Mascotte (taupe) configurée côté backend. null = image locale par défaut. */
+val LocalMascotUrl = staticCompositionLocalOf<String?> { null }
+
 @Composable
 fun ScreenBackground(
     backgroundRes: DrawableResource,
@@ -98,15 +107,19 @@ fun ScreenBackground(
                 modifier = Modifier.fillMaxSize()
             )
         }
-        Image(
-            painter = painterResource(Res.drawable.logo_oreal),
-            contentDescription = "L'Oréal",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 12.dp, end = 12.dp)
-                .width(130.dp)
-        )
+        // Logo principal en haut à droite (configuré dans sdp-dashboard) ; rien s'il est vide
+        val logoUrl = LocalLogoUrl.current
+        if (logoUrl != null) {
+            AsyncImage(
+                model = logoUrl,
+                contentDescription = "Logo",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 12.dp, end = 12.dp)
+                    .width(130.dp)
+            )
+        }
         content()
     }
 }

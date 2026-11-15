@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ninno.app.resources.Res
 import com.ninno.app.resources.bg_home2
-import com.ninno.app.ui.FamilyDayLogo
+import com.ninno.app.ui.PartnerLogo
 import com.ninno.app.ui.MascotWithBubble
 import com.ninno.app.ui.NavHomeButton
 import com.ninno.app.ui.ScreenBackground
@@ -78,9 +78,8 @@ fun FinalScreen(
     }
 
     ScreenBackground(backgroundRes = Res.drawable.bg_home2, backgroundUrl = backgroundUrl, modifier = Modifier.fillMaxSize()) {
-        FamilyDayLogo(
+        PartnerLogo(
             width = logoWidth,
-            logoUrl = logoUrl,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = screenPadding)

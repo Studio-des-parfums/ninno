@@ -4,13 +4,14 @@ import io.ktor.client.call.body
 import io.ktor.client.request.get
 import kotlinx.serialization.Serializable
 
-private const val BASE_URL = "https://backend-ninno-production.up.railway.app"
 
 @Serializable
 data class RemoteAppConfig(
     val backgroundImageUrl: String? = null,
     val backgroundOtherImageUrl: String? = null,
-    val logoImageUrl: String? = null
+    val logoImageUrl: String? = null,
+    val partnerLogoImageUrl: String? = null,
+    val mascotImageUrl: String? = null
 )
 
 @Serializable

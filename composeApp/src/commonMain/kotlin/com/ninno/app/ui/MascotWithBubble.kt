@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ninno.app.resources.Res
 import com.ninno.app.resources.mascot
+import coil3.compose.AsyncImage
 import org.jetbrains.compose.resources.painterResource
 
 /** Petite pointe de la bulle, orientée vers la mascotte (à gauche). */
@@ -101,10 +102,8 @@ fun MascotWithBubble(
             modifier = Modifier.align(Alignment.BottomStart),
             verticalAlignment = Alignment.Top,
         ) {
-            Image(
-                painter = painterResource(Res.drawable.mascot),
-                contentDescription = "Mascotte",
-                contentScale = ContentScale.Fit,
+            MascotImage(
+                description = "Mascotte",
                 modifier = Modifier.size(mascotHeight),
             )
 
@@ -179,12 +178,29 @@ fun CenteredMascotWithBubble(
                     .size(width = 28.dp, height = 18.dp)
                     .background(bubbleColor, BubbleTailDownShape)
             )
-            Image(
-                painter = painterResource(Res.drawable.mascot),
-                contentDescription = "Zoé la taupe",
-                contentScale = ContentScale.Fit,
+            MascotImage(
+                description = "Zoé la taupe",
                 modifier = Modifier.size(mascotHeight),
             )
         }
+    }
+}
+
+@Composable
+private fun MascotImage(description: String, modifier: Modifier = Modifier) {
+    val url = LocalMascotUrl.current
+    val fallback = painterResource(Res.drawable.mascot)
+    if (url != null) {
+        AsyncImage(
+            model = url,
+            contentDescription = description,
+            contentScale = ContentScale.Fit,
+            placeholder = fallback,
+            error = fallback,
+            fallback = fallback,
+            modifier = modifier,
+        )
+    } else {
+        Image(painter = fallback, contentDescription = description, contentScale = ContentScale.Fit, modifier = modifier)
     }
 }
