@@ -67,14 +67,15 @@ fun FinalScreen(
 
     // Ce que dit Zoé, selon l'état de la génération
     val state = uiState
-    val mascotMessages = remember(state) {
+    val strings = LocalStrings.current
+    val mascotMessages = remember(state, strings) {
         when (state) {
             FormulaUiState.Idle, FormulaUiState.Loading ->
-                listOf("Bravo !", "Je prépare ton parfum...")
+                listOf(strings.bravo, strings.preparing)
             is FormulaUiState.Success ->
-                listOf("Bravo !", "Voici ton parfum :", state.formula.description)
+                listOf(strings.bravo, strings.hereIsYourPerfume, state.formula.description)
             is FormulaUiState.Error ->
-                listOf("Oups !", state.message)
+                listOf(strings.oops, strings.error(state.reason))
         }
     }
 
@@ -128,8 +129,9 @@ private fun FormulaNotesCard(state: FormulaUiState, modifier: Modifier = Modifie
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        val strings = LocalStrings.current
         Text(
-            text = "Ta formule",
+            text = strings.yourFormula,
             color = TextDark,
             fontSize = 30.sp,
             fontWeight = FontWeight.Bold,
@@ -143,19 +145,19 @@ private fun FormulaNotesCard(state: FormulaUiState, modifier: Modifier = Modifie
             is FormulaUiState.Success -> {
                 val formula = state.formula
                 Text(
-                    text = "Pour un flacon de ${formula.volumeMl} mL",
+                    text = strings.forBottle(formula.volumeMl),
                     color = TextDark.copy(alpha = 0.75f),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center
                 )
-                NoteGroup("Notes de tête", formula.notesOf(NoteCategory.TOP), TopColor)
-                NoteGroup("Notes de cœur", formula.notesOf(NoteCategory.HEART), HeartColor)
-                NoteGroup("Notes de fond", formula.notesOf(NoteCategory.BASE), BaseColor)
+                NoteGroup(strings.topNotes, formula.notesOf(NoteCategory.TOP), TopColor)
+                NoteGroup(strings.heartNotes, formula.notesOf(NoteCategory.HEART), HeartColor)
+                NoteGroup(strings.baseNotes, formula.notesOf(NoteCategory.BASE), BaseColor)
             }
             is FormulaUiState.Error -> {
                 Text(
-                    text = "Ta formule n'a pas pu être créée.",
+                    text = strings.formulaFailed,
                     color = TextDark.copy(alpha = 0.7f),
                     fontSize = 18.sp,
                     textAlign = TextAlign.Center

@@ -14,11 +14,7 @@ fun FourthScreen(
 ) {
     CardScreen(
         backgroundRes = Res.drawable.bg_home2,
-        messages = listOf(
-            "On va commencer par la note de tête : c'est la plus légère.",
-            "Sens, et choisis la meilleure puis celle que tu n'aimes pas.",
-            "C'est la ligne du haut."
-        ),
+        messages = LocalStrings.current.fourth,
         onNextClick = onNextClick,
         onBackClick = onBackClick,
         backgroundUrl = backgroundUrl,

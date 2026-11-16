@@ -1,7 +1,11 @@
 package com.ninno.app
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +24,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedTextField
@@ -35,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -46,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import com.ninno.app.network.ChildDto
 import com.ninno.app.resources.Res
 import com.ninno.app.resources.bg_home
+import com.ninno.app.ui.Flag
 import com.ninno.app.ui.ScreenBackground
 
 private val Ink = Color(0xFF3B1E5C)
@@ -55,12 +63,19 @@ private val Accent = Color(0xFFD32F2F)
 
 /** Carte blanche centrée, dans le style du bandeau d'accueil. */
 @Composable
-private fun AccountCard(backgroundUrl: String?, content: @Composable ColumnScope.() -> Unit) {
+private fun AccountCard(
+    backgroundUrl: String?,
+    /** Affiché au-dessus de la carte (ex. sélecteur de langue). */
+    header: (@Composable () -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
     ScreenBackground(backgroundRes = Res.drawable.bg_home, backgroundUrl = backgroundUrl) {
         Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.Center) {
+          Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
+            header?.invoke()
             Column(
                 modifier = Modifier
-                    .padding(16.dp)
+                    .padding(top = if (header != null) 12.dp else 0.dp)
                     .widthIn(max = 420.dp)
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(28.dp))
@@ -70,6 +85,7 @@ private fun AccountCard(backgroundUrl: String?, content: @Composable ColumnScope
                 horizontalAlignment = Alignment.CenterHorizontally,
                 content = content
             )
+          }
         }
     }
 }
@@ -128,7 +144,7 @@ private fun SerialField(value: String, onChange: (String) -> Unit) {
     OutlinedTextField(
         value = value,
         onValueChange = { onChange(sanitizeSerialInput(it)) },
-        label = { Text("Numéro de série") },
+        label = { Text(accountStringsCurrent.serialNumber) },
         placeholder = { Text("123-456-789") },
         singleLine = true,
         visualTransformation = SerialVisualTransformation,
@@ -165,7 +181,8 @@ private fun Field(
 @Composable
 fun AuthScreen(viewModel: AccountViewModel, backgroundUrl: String?) {
     val state by viewModel.state.collectAsState()
-    AccountCard(backgroundUrl) {
+    val language by viewModel.language.collectAsState()
+    AccountCard(backgroundUrl, header = { LanguageSelect(language) { viewModel.setLanguage(it) } }) {
         when (state.step) {
             AuthStep.SERIAL -> SerialStep(state, viewModel)
             AuthStep.REGISTER -> RegisterStep(state, viewModel)
@@ -177,15 +194,16 @@ fun AuthScreen(viewModel: AccountViewModel, backgroundUrl: String?) {
 @Composable
 private fun SerialStep(state: AccountState, viewModel: AccountViewModel) {
     var serial by remember { mutableStateOf("") }
-    CardTitle("Bienvenue !")
+    val t = accountStringsCurrent
+    CardTitle(t.welcomeTitle)
     Text(
-        "Saisis le numéro de série qui se trouve dans ton coffret.",
+        t.serialPrompt,
         color = Ink, textAlign = TextAlign.Center
     )
     SerialField(serial) { serial = it }
     Messages(state.error, state.info)
-    PrimaryButton("Valider", state.busy, enabled = serial.length == SERIAL_DIGITS) { viewModel.submitSerial(serial) }
-    TextButton(onClick = { viewModel.goTo(AuthStep.LOGIN) }) { Text("J'ai déjà un compte", color = Ink) }
+    PrimaryButton(t.validate, state.busy, enabled = serial.length == SERIAL_DIGITS) { viewModel.submitSerial(serial) }
+    TextButton(onClick = { viewModel.goTo(AuthStep.LOGIN) }) { Text(t.haveAccount, color = Ink) }
 }
 
 @Composable
@@ -198,36 +216,38 @@ private fun RegisterStep(state: AccountState, viewModel: AccountViewModel) {
     var age by remember { mutableStateOf<Int?>(null) }
     // Erreur affichée dès que la confirmation est saisie et diffère
     val mismatch = confirmation.isNotEmpty() && confirmation != password
-    CardTitle("Créer le compte parent")
-    Text("Coffret ${state.serial.chunked(3).joinToString("-")}", color = Ink, fontSize = 13.sp)
-    Field(email, { email = it }, "E-mail du parent", KeyboardType.Email)
-    Field(password, { password = it }, "Mot de passe (8 caractères min.)", KeyboardType.Password, password = true)
-    Field(confirmation, { confirmation = it }, "Confirmer le mot de passe", KeyboardType.Password, password = true)
-    if (mismatch) Text("Les mots de passe ne correspondent pas.", color = ErrorRed, fontSize = 14.sp)
-    Field(childName, { childName = it }, "Prénom de l'enfant", capitalization = KeyboardCapitalization.Words)
+    val t = accountStringsCurrent
+    CardTitle(t.registerTitle)
+    Text(t.box(state.serial.chunked(3).joinToString("-")), color = Ink, fontSize = 13.sp)
+    Field(email, { email = it }, t.parentEmail, KeyboardType.Email)
+    Field(password, { password = it }, t.passwordMin, KeyboardType.Password, password = true)
+    Field(confirmation, { confirmation = it }, t.confirmPassword, KeyboardType.Password, password = true)
+    if (mismatch) Text(t.passwordsMismatch, color = ErrorRed, fontSize = 14.sp)
+    Field(childName, { childName = it }, t.childFirstName, capitalization = KeyboardCapitalization.Words)
     GenderPicker(gender) { gender = it }
     AgePicker(age, gender?.color ?: Ink) { age = it }
     Messages(state.error, state.info)
     PrimaryButton(
-        "Créer le compte", state.busy,
+        t.createAccount, state.busy,
         enabled = email.isNotBlank() && password.length >= 8 && confirmation == password && childName.isNotBlank() &&
             gender != null && age != null
     ) { viewModel.register(email, password, childName, gender!!, age!!) }
-    TextButton(onClick = { viewModel.goTo(AuthStep.SERIAL) }) { Text("Retour", color = Ink) }
+    TextButton(onClick = { viewModel.goTo(AuthStep.SERIAL) }) { Text(t.back, color = Ink) }
 }
 
 @Composable
 private fun LoginStep(state: AccountState, viewModel: AccountViewModel) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    CardTitle("Connexion parent")
-    Field(email, { email = it }, "E-mail", KeyboardType.Email)
-    Field(password, { password = it }, "Mot de passe", KeyboardType.Password, password = true)
+    val t = accountStringsCurrent
+    CardTitle(t.loginTitle)
+    Field(email, { email = it }, t.email, KeyboardType.Email)
+    Field(password, { password = it }, t.password, KeyboardType.Password, password = true)
     Messages(state.error, state.info)
-    PrimaryButton("Se connecter", state.busy, enabled = email.isNotBlank() && password.isNotBlank()) {
+    PrimaryButton(t.signIn, state.busy, enabled = email.isNotBlank() && password.isNotBlank()) {
         viewModel.login(email, password)
     }
-    TextButton(onClick = { viewModel.goTo(AuthStep.SERIAL) }) { Text("J'ai un nouveau coffret", color = Ink) }
+    TextButton(onClick = { viewModel.goTo(AuthStep.SERIAL) }) { Text(t.newBox, color = Ink) }
 }
 
 /** Espace parent : choix de l'enfant qui joue, ajout d'un enfant avec un nouveau coffret. */
@@ -241,8 +261,13 @@ fun ChildrenScreen(viewModel: AccountViewModel, backgroundUrl: String?, onChildS
     var gender by remember { mutableStateOf<ChildGender?>(null) }
     var age by remember { mutableStateOf<Int?>(null) }
 
-    AccountCard(backgroundUrl) {
-        CardTitle(if (adding) "Ajouter un enfant" else "Qui joue ?")
+    val language by viewModel.language.collectAsState()
+    val t = accountStringsCurrent
+    AccountCard(
+        backgroundUrl,
+        header = if (adding) null else ({ LanguageSelect(language) { viewModel.setLanguage(it) } })
+    ) {
+        CardTitle(if (adding) t.addChildTitle else t.whoPlays)
         if (!adding) {
             parent.children.forEach { child ->
                 // Couleur et icône du genre (bleu garçon, rose fille), violet si inconnu
@@ -258,32 +283,78 @@ fun ChildrenScreen(viewModel: AccountViewModel, backgroundUrl: String?, onChildS
                         .padding(vertical = 14.dp)
                 ) {
                     childGender?.let {
-                        Icon(it.icon, contentDescription = it.label, tint = Color.White, modifier = Modifier.size(24.dp).padding(end = 4.dp))
+                        Icon(it.icon, contentDescription = it.label(t), tint = Color.White, modifier = Modifier.size(24.dp).padding(end = 4.dp))
                     }
                     Text(child.firstName, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    child.age?.let { Text("  · $it ans", color = Color.White.copy(alpha = 0.85f), fontSize = 16.sp) }
+                    child.age?.let { Text("  · ${t.yearsOld(it)}", color = Color.White.copy(alpha = 0.85f), fontSize = 16.sp) }
                 }
             }
             TextButton(onClick = { adding = true; viewModel.clearError() }) {
-                Text("+ Ajouter un enfant (nouveau coffret)", color = Ink)
+                Text(t.addChildLink, color = Ink)
             }
-            TextButton(onClick = { viewModel.logout() }) { Text("Se déconnecter (${parent.email})", color = Ink, fontSize = 13.sp) }
+            TextButton(onClick = { viewModel.logout() }) { Text(t.logout(parent.email), color = Ink, fontSize = 13.sp) }
         } else {
-            Text("Chaque enfant a besoin du numéro de série de son propre coffret.", color = Ink, textAlign = TextAlign.Center)
+            Text(t.eachChildNeedsSerial, color = Ink, textAlign = TextAlign.Center)
             SerialField(serial) { serial = it }
-            Field(childName, { childName = it }, "Prénom de l'enfant", capitalization = KeyboardCapitalization.Words)
+            Field(childName, { childName = it }, t.childFirstName, capitalization = KeyboardCapitalization.Words)
             GenderPicker(gender) { gender = it }
             AgePicker(age, gender?.color ?: Ink) { age = it }
             Messages(state.error, null)
             PrimaryButton(
-                "Ajouter", state.busy,
+                t.add, state.busy,
                 enabled = serial.length == SERIAL_DIGITS && childName.isNotBlank() && gender != null && age != null
             ) {
                 viewModel.addChild(serial, childName, gender!!, age!!) {
                     adding = false; serial = ""; childName = ""; gender = null; age = null
                 }
             }
-            TextButton(onClick = { adding = false; viewModel.clearError() }) { Text("Annuler", color = Ink) }
+            TextButton(onClick = { adding = false; viewModel.clearError() }) { Text(t.cancel, color = Ink) }
+        }
+    }
+}
+
+/** Langue de Zoé : bouton drapeau + langue, qui déroule la liste de toutes les langues. */
+@Composable
+private fun LanguageSelect(selected: Language, onSelect: (Language) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier
+                .shadow(6.dp, RoundedCornerShape(50))
+                .clip(RoundedCornerShape(50))
+                .background(Color.White)
+                .clickable { open = true }
+                .padding(start = 16.dp, end = 10.dp, top = 8.dp, bottom = 8.dp)
+        ) {
+            Flag(selected)
+            Text(selected.nativeName, color = Ink, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            Icon(Icons.Filled.ArrowDropDown, contentDescription = accountStringsCurrent.chooseLanguage, tint = Ink)
+        }
+        DropdownMenu(
+            expanded = open,
+            onDismissRequest = { open = false },
+            modifier = Modifier.background(Color.White)
+        ) {
+            Language.entries.forEach { language ->
+                val active = language == selected
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            language.nativeName,
+                            color = Ink,
+                            fontWeight = if (active) FontWeight.Bold else FontWeight.Normal
+                        )
+                    },
+                    leadingIcon = { Flag(language) },
+                    trailingIcon = if (active) ({ Icon(Icons.Filled.Check, contentDescription = null, tint = Ink) }) else null,
+                    onClick = {
+                        onSelect(language)
+                        open = false
+                    }
+                )
+            }
         }
     }
 }

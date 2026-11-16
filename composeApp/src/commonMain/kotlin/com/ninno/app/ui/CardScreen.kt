@@ -24,16 +24,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ninno.app.LocalStrings
 import org.jetbrains.compose.resources.DrawableResource
 
 private val PanelInk = Color(0xFF3B1E5C)
-
-private val Rules = listOf(
-    "Un clic" to "sur une note affiche son nom.",
-    "Un double clic" to "affiche sa description : ce qu'elle sent et ce qu'elle évoque.",
-    "Glisse la note" to "dans « J'aime » ou « Je n'aime pas » pour faire ton choix. Pour changer d'avis, sors-la de sa case.",
-    "Deux notes par case" to "à chaque étape : tes deux préférées et les deux que tu aimes le moins.",
-)
 
 /**
  * Écran d'explication : Zoé à gauche (bulle au-dessus d'elle), et le panneau « Comment ça marche ? »
@@ -123,13 +117,14 @@ private fun RulesPanel(titleSize: TextUnit, textSize: TextUnit, modifier: Modifi
             .border(2.dp, PanelInk.copy(alpha = 0.85f), RoundedCornerShape(28.dp))
             .padding(horizontal = 28.dp, vertical = 24.dp)
     ) {
+        val strings = LocalStrings.current
         Text(
-            text = "Comment ça marche ?",
+            text = strings.rulesTitle,
             color = PanelInk,
             fontSize = titleSize,
             fontWeight = FontWeight.Bold,
         )
-        Rules.forEachIndexed { index, (lead, rest) ->
+        strings.rules.forEachIndexed { index, (lead, rest) ->
             Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 Box(
                     contentAlignment = Alignment.Center,

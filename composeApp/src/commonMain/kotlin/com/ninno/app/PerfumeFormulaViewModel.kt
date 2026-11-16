@@ -43,7 +43,7 @@ sealed interface FormulaUiState {
     data object Idle : FormulaUiState
     data object Loading : FormulaUiState
     data class Success(val formula: GeneratedFormula) : FormulaUiState
-    data class Error(val message: String) : FormulaUiState
+    data class Error(val reason: FormulaError) : FormulaUiState
 }
 
 class PerfumeFormulaViewModel : ViewModel() {
@@ -83,11 +83,11 @@ class PerfumeFormulaViewModel : ViewModel() {
         val heart = current.heartChoice
         val base = current.baseChoice
         if (top == null || heart == null || base == null) {
-            _uiState.value = FormulaUiState.Error("Réponses incomplètes")
+            _uiState.value = FormulaUiState.Error(FormulaError.INCOMPLETE)
             return
         }
         if (top.liked.isEmpty() && heart.liked.isEmpty() && base.liked.isEmpty()) {
-            _uiState.value = FormulaUiState.Error("Tu n'as aimé aucune note : recommence pour créer ton parfum !")
+            _uiState.value = FormulaUiState.Error(FormulaError.NOTHING_LIKED)
             return
         }
 
@@ -123,7 +123,7 @@ class PerfumeFormulaViewModel : ViewModel() {
                     )
                 )
             } catch (e: Throwable) {
-                _uiState.value = FormulaUiState.Error("Impossible de générer ta formule pour le moment.")
+                _uiState.value = FormulaUiState.Error(FormulaError.GENERATION_FAILED)
             }
         }
     }

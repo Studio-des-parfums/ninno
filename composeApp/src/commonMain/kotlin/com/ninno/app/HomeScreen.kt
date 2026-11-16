@@ -43,6 +43,7 @@ private val BannerBorder = Color(0xFF3B1E5C)
 
 @Composable
 private fun TitleBanner(titleSize: TextUnit, withSize: TextUnit, subtitleSize: TextUnit) {
+    val strings = LocalStrings.current
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -52,7 +53,7 @@ private fun TitleBanner(titleSize: TextUnit, withSize: TextUnit, subtitleSize: T
             .padding(horizontal = 28.dp, vertical = 14.dp)
     ) {
         Text(
-            text = "Crée ton parfum",
+            text = strings.homeTitle,
             color = TitleColor,
             fontSize = titleSize,
             fontWeight = FontWeight.Bold,
@@ -60,7 +61,7 @@ private fun TitleBanner(titleSize: TextUnit, withSize: TextUnit, subtitleSize: T
             textAlign = TextAlign.Center
         )
         Text(
-            text = "avec",
+            text = strings.homeWith,
             color = TitleColor,
             fontSize = withSize,
             fontWeight = FontWeight.Bold,
@@ -68,7 +69,7 @@ private fun TitleBanner(titleSize: TextUnit, withSize: TextUnit, subtitleSize: T
             textAlign = TextAlign.Center
         )
         Text(
-            text = "Zoé la taupe",
+            text = strings.zoeName,
             color = SubtitleColor,
             fontSize = subtitleSize,
             fontWeight = FontWeight.Bold,
@@ -151,13 +152,9 @@ fun HomeScreen(
                 }
             }
 
+            val strings = LocalStrings.current
             MascotWithBubble(
-                messages = listOf(
-                    if (childName.isNullOrBlank()) "Coucou ! Moi, c'est Zoé la taupe."
-                    else "Coucou $childName ! Moi, c'est Zoé la taupe.",
-                    "Bienvenue au Studio des Parfums !",
-                    "Es-tu ${LocalChildGender.current.agree("prêt", "prête")} à commencer ?"
-                ),
+                messages = listOf(strings.greeting(childName), strings.welcome, strings.readyToStart),
                 // Plus petite qu'ailleurs : laisse respirer le titre d'accueil
                 heightFraction = 0.45f,
                 modifier = Modifier.fillMaxSize()

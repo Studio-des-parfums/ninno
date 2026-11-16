@@ -14,11 +14,7 @@ fun SeventhScreen(
 ) {
     CardScreen(
         backgroundRes = Res.drawable.bg_home2,
-        messages = listOf(
-            "Enfin, la note de fond : la puissance.",
-            "Sens, et choisis les 2 meilleures puis celle que tu n'aimes pas.",
-            "C'est la ligne du bas."
-        ),
+        messages = LocalStrings.current.seventh,
         onNextClick = onNextClick,
         onBackClick = onBackClick,
         backgroundUrl = backgroundUrl,

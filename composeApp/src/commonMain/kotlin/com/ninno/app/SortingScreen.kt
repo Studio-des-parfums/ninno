@@ -441,7 +441,7 @@ fun SortingScreen(
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
-                                text = "J'aime",
+                                text = LocalStrings.current.like,
                                 color = Color.White,
                                 fontSize = (noteLabelSize.value * 1.2f).sp,
                                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
@@ -481,7 +481,7 @@ fun SortingScreen(
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
-                                text = "Je n'aime pas",
+                                text = LocalStrings.current.dislike,
                                 color = Color.White,
                                 fontSize = (noteLabelSize.value * 1.2f).sp,
                                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
@@ -562,7 +562,7 @@ fun SortingScreen(
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
-                                text = "J'aime",
+                                text = LocalStrings.current.like,
                                 color = Color.White,
                                 fontSize = (noteLabelSize.value * 1.2f).sp,
                                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
@@ -602,7 +602,7 @@ fun SortingScreen(
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
-                                text = "Je n'aime pas",
+                                text = LocalStrings.current.dislike,
                                 color = Color.White,
                                 fontSize = (noteLabelSize.value * 1.2f).sp,
                                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
