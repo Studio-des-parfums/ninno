@@ -99,7 +99,7 @@ fun HomeScreen(onNextClick: () -> Unit, backgroundUrl: String? = null, isLoading
                         textAlign = TextAlign.Center
                     )
                     Text(
-                        text = "Ninno, le robot",
+                        text = "Zoé la taupe",
                         color = SubtitleColor,
                         fontSize = subtitleSize,
                         fontWeight = FontWeight.Bold,
@@ -147,7 +147,7 @@ fun HomeScreen(onNextClick: () -> Unit, backgroundUrl: String? = null, isLoading
                         textAlign = TextAlign.Center
                     )
                     Text(
-                        text = "Ninno, le robot",
+                        text = "Zoé la taupe",
                         color = SubtitleColor,
                         fontSize = subtitleSize,
                         fontWeight = FontWeight.Bold,
