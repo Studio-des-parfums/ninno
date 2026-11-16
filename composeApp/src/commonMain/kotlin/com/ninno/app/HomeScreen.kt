@@ -37,7 +37,7 @@ import com.ninno.app.ui.screenPaddingFor
 
 // Titre posé sur un bandeau blanc translucide cerclé de violet : lisible quel que soit le fond configuré
 private val TitleColor = Color(0xFF3B1E5C)
-private val SubtitleColor = Color(0xFF00796B)
+private val SubtitleColor = Color(0xFFD32F2F)
 private val BannerBorder = Color(0xFF3B1E5C)
 
 @Composable
