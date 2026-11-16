@@ -440,14 +440,10 @@ fun SortingScreen(
                                 .fillMaxHeight(),
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Text(
+                            ChoiceLabel(
                                 text = LocalStrings.current.like,
-                                color = Color.White,
-                                fontSize = (noteLabelSize.value * 1.2f).sp,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
+                                color = LikeLabelColor,
+                                fontSize = (noteLabelSize.value * 1.2f).sp
                             )
                             ColorSection(
                                 color = Color(0xFF4CAF50),
@@ -480,14 +476,10 @@ fun SortingScreen(
                                 .fillMaxHeight(),
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Text(
+                            ChoiceLabel(
                                 text = LocalStrings.current.dislike,
-                                color = Color.White,
-                                fontSize = (noteLabelSize.value * 1.2f).sp,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
+                                color = DislikeLabelColor,
+                                fontSize = (noteLabelSize.value * 1.2f).sp
                             )
                             ColorSection(
                                 color = Color(0xFFE53935),
@@ -561,14 +553,10 @@ fun SortingScreen(
                                 .weight(1f),
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Text(
+                            ChoiceLabel(
                                 text = LocalStrings.current.like,
-                                color = Color.White,
-                                fontSize = (noteLabelSize.value * 1.2f).sp,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
+                                color = LikeLabelColor,
+                                fontSize = (noteLabelSize.value * 1.2f).sp
                             )
                             ColorSection(
                                 color = Color(0xFF4CAF50),
@@ -601,14 +589,10 @@ fun SortingScreen(
                                 .weight(1f),
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Text(
+                            ChoiceLabel(
                                 text = LocalStrings.current.dislike,
-                                color = Color.White,
-                                fontSize = (noteLabelSize.value * 1.2f).sp,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
+                                color = DislikeLabelColor,
+                                fontSize = (noteLabelSize.value * 1.2f).sp
                             )
                             ColorSection(
                                 color = Color(0xFFE53935),
@@ -987,5 +971,28 @@ private fun NoteInfoBubble(info: NoteInfo, fontSize: TextUnit) {
                 )
             }
         }
+    }
+}
+
+// Texte foncé pour rester lisible sur la pastille blanche
+private val LikeLabelColor = Color(0xFF2E7D32)
+private val DislikeLabelColor = Color(0xFFC62828)
+
+/** Titre « J'aime » / « Je n'aime pas » sur une pastille blanche : lisible quel que soit le fond. */
+@Composable
+private fun ChoiceLabel(text: String, color: Color, fontSize: androidx.compose.ui.unit.TextUnit) {
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Text(
+            text = text,
+            color = color,
+            fontSize = fontSize,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+            fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier
+                .shadow(4.dp, androidx.compose.foundation.shape.RoundedCornerShape(50))
+                .background(Color.White.copy(alpha = 0.95f), androidx.compose.foundation.shape.RoundedCornerShape(50))
+                .padding(horizontal = 18.dp, vertical = 4.dp)
+        )
     }
 }
