@@ -1,0 +1,24 @@
+# Base MySQL de développement local : `docker compose up -d`
+# Connexion (backend/.env, DataGrip) : localhost:3307, base ninno, utilisateur ninno / ninno
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: ninno-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ninno
+      MYSQL_USER: ninno
+      MYSQL_PASSWORD: ninno
+    ports:
+      - "3307:3306"
+    volumes:
+      - ninno-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  ninno-mysql-data:

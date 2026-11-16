@@ -50,6 +50,9 @@ fun App(versionName: String) {
             val displayHeartNotes = content?.heartNotes ?: heartNotes.toDisplayNotes()
             val displayBaseNotes = content?.baseNotes ?: baseNotes.toDisplayNotes()
 
+            val accountViewModel: AccountViewModel = viewModel { AccountViewModel() }
+            val account by accountViewModel.state.collectAsState()
+
             val navController = rememberNavController()
             // Logos configurés dans sdp-dashboard, lus par ScreenBackground / PartnerLogo
             CompositionLocalProvider(
@@ -57,13 +60,24 @@ fun App(versionName: String) {
                 LocalPartnerLogoUrl provides content?.partnerLogoUrl,
                 LocalMascotUrl provides content?.mascotUrl
             ) {
+            // Accès réservé : numéro de série du coffret -> compte parent -> choix de l'enfant.
+            when {
+                account.restoring -> HomeScreen(onNextClick = {}, backgroundUrl = backgroundUrl, isLoading = true, versionName = versionName)
+                account.parent == null -> AuthScreen(accountViewModel, backgroundUrl)
+                account.selectedChild == null -> ChildrenScreen(accountViewModel, backgroundUrl) { accountViewModel.selectChild(it) }
+                else ->
             NavHost(navController = navController, startDestination = Routes.HOME) {
                 composable(Routes.HOME) {
                     HomeScreen(
                         onNextClick = { navController.navigate(Routes.SECONDARY) },
                         backgroundUrl = backgroundUrl,
                         isLoading = isPreloading,
-                        versionName = versionName
+                        versionName = versionName,
+                        childName = account.selectedChild?.firstName,
+                        onChangeChild = {
+                            formulaViewModel.reset()
+                            accountViewModel.clearSelectedChild()
+                        }
                     )
                 }
                 composable(Routes.SECONDARY) {
@@ -158,6 +172,7 @@ fun App(versionName: String) {
                         logoUrl = logoUrl
                     )
                 }
+            }
             }
             }
         }
