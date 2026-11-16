@@ -90,12 +90,13 @@ fun MascotWithBubble(
     modifier: Modifier = Modifier,
     charDelayMs: Long = 40,
     pauseBetweenMessagesMs: Long = 700,
+    /** Part de la hauteur de l'écran occupée par la mascotte. */
+    heightFraction: Float = 0.6f,
 ) {
     val displayed = rememberTypewriterText(messages, charDelayMs, pauseBetweenMessagesMs)
 
     BoxWithConstraints(modifier = modifier) {
-        // La mascotte occupe ~60 % de la hauteur de l'écran
-        val mascotHeight = maxHeight * 0.6f
+        val mascotHeight = maxHeight * heightFraction
         val bubbleFont = if (maxWidth > 1000.dp) 22.sp else 16.sp
 
         Row(

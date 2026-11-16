@@ -27,6 +27,7 @@ import com.ninno.app.resources.Res
 import com.ninno.app.resources.bg_home
 import com.ninno.app.ui.DeviceSize
 import com.ninno.app.ui.MascotWithBubble
+import com.ninno.app.ui.NavBackButton
 import com.ninno.app.ui.NavForwardButton
 import com.ninno.app.ui.ScreenBackground
 import com.ninno.app.ui.navButtonSizeFor
@@ -78,7 +79,14 @@ private fun TitleBanner(titleSize: TextUnit, withSize: TextUnit, subtitleSize: T
 }
 
 @Composable
-fun HomeScreen(onNextClick: () -> Unit, backgroundUrl: String? = null, isLoading: Boolean = false, versionName: String = "") {
+fun HomeScreen(
+    onNextClick: () -> Unit,
+    backgroundUrl: String? = null,
+    isLoading: Boolean = false,
+    versionName: String = "",
+    childName: String? = null,
+    onChangeChild: (() -> Unit)? = null,
+) {
     val isLandscape = rememberIsLandscape()
     val useStackedLayout = rememberUseStackedLayout()
     val deviceSize = rememberDeviceSize()
@@ -145,12 +153,26 @@ fun HomeScreen(onNextClick: () -> Unit, backgroundUrl: String? = null, isLoading
 
             MascotWithBubble(
                 messages = listOf(
-                    "Coucou ! Moi, c'est Zoé la taupe.",
+                    if (childName.isNullOrBlank()) "Coucou ! Moi, c'est Zoé la taupe."
+                    else "Coucou $childName ! Moi, c'est Zoé la taupe.",
                     "Bienvenue au Studio des Parfums !",
                     "Es-tu prêt à commencer ?"
                 ),
+                // Plus petite qu'ailleurs : laisse respirer le titre d'accueil
+                heightFraction = 0.45f,
                 modifier = Modifier.fillMaxSize()
             )
+
+            // Retour à « Qui joue ? » pour changer d'enfant
+            if (onChangeChild != null) {
+                NavBackButton(
+                    onClick = onChangeChild,
+                    size = buttonSize,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(screenPadding)
+                )
+            }
 
             NavForwardButton(
                 onClick = onNextClick,
@@ -165,7 +187,7 @@ fun HomeScreen(onNextClick: () -> Unit, backgroundUrl: String? = null, isLoading
                 color = Color.White,
                 fontSize = 12.sp,
                 modifier = Modifier
-                    .align(Alignment.BottomStart)
+                    .align(Alignment.BottomCenter)
                     .padding(screenPadding)
             )
         }
