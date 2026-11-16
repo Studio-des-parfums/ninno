@@ -4,6 +4,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -24,7 +25,9 @@ data class NoteChoiceDto(
 data class FormulaRequest(
     val top: NoteChoiceDto,
     val heart: NoteChoiceDto,
-    val base: NoteChoiceDto
+    val base: NoteChoiceDto,
+    /** Enfant qui joue : la formule lui est rattachée dans l'historique (page Analyse du dashboard). */
+    val childId: Int? = null
 )
 
 @Serializable
@@ -60,8 +63,9 @@ object NinnoHttpClient {
 }
 
 object FormulaApiClient {
-    suspend fun generateFormula(request: FormulaRequest): FormulaResponse =
+    suspend fun generateFormula(request: FormulaRequest, token: String?): FormulaResponse =
         NinnoHttpClient.client.post("$BASE_URL/formula") {
+            if (token != null) bearerAuth(token)
             contentType(ContentType.Application.Json)
             setBody(request)
         }.body()
