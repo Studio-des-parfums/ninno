@@ -19,6 +19,7 @@ data class RemoteNote(
     val id: Int,
     val name: String,
     val type: String,
+    val description: String? = null,
     val imageUrl: String? = null,
     val happyImageUrl: String? = null,
     val sadImageUrl: String? = null,

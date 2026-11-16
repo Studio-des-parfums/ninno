@@ -205,3 +205,57 @@ private fun MascotImage(description: String, modifier: Modifier = Modifier) {
         Image(painter = fallback, contentDescription = description, contentScale = ContentScale.Fit, modifier = modifier)
     }
 }
+
+/**
+ * Mascotte ancrée en bas à gauche, bulle au-dessus d'elle.
+ * La mascotte a une taille fixe et ne bouge jamais : la bulle grandit vers le haut pendant que le texte s'écrit.
+ */
+@Composable
+fun MascotWithBubbleAbove(
+    messages: List<String>,
+    modifier: Modifier = Modifier,
+    charDelayMs: Long = 35,
+    pauseBetweenMessagesMs: Long = 600,
+) {
+    val displayed = rememberTypewriterText(messages, charDelayMs, pauseBetweenMessagesMs, startDelayMs = 400)
+
+    BoxWithConstraints(modifier = modifier) {
+        // Responsive : bornée par la hauteur ET la largeur dispo, jamais énorme sur grand écran
+        val mascotSize = minOf(maxHeight * 0.38f, maxWidth * 0.55f, 240.dp)
+        val bubbleFont = if (maxWidth > 500.dp) 20.sp else 16.sp
+        val bubbleMaxWidth = minOf(maxWidth - mascotSize * 0.15f, 360.dp)
+
+        MascotImage(
+            description = "Zoé la taupe",
+            modifier = Modifier.align(Alignment.BottomStart).size(mascotSize),
+        )
+
+        if (displayed.isNotEmpty()) Column(
+            horizontalAlignment = Alignment.Start,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(bottom = mascotSize * 0.92f, start = mascotSize * 0.15f),
+        ) {
+            Box(
+                modifier = Modifier
+                    .widthIn(max = bubbleMaxWidth)
+                    .shadow(8.dp, RoundedCornerShape(24.dp))
+                    .background(Color.White, RoundedCornerShape(24.dp))
+                    .padding(horizontal = 22.dp, vertical = 16.dp),
+            ) {
+                Text(
+                    text = displayed,
+                    color = Color(0xFF2B1B3D),
+                    fontSize = bubbleFont,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+            Box(
+                Modifier
+                    .padding(start = mascotSize * 0.3f)
+                    .size(width = 26.dp, height = 16.dp)
+                    .background(Color.White, BubbleTailDownShape)
+            )
+        }
+    }
+}

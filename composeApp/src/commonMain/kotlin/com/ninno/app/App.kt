@@ -19,6 +19,7 @@ import com.ninno.app.ui.theme.NinnoTheme
 
 private object Routes {
     const val HOME = "home"
+    const val HOW_TO = "how_to"
     const val SECONDARY = "secondary"
     const val THIRD = "third"
     const val FOURTH = "fourth"
@@ -69,7 +70,7 @@ fun App(versionName: String) {
             NavHost(navController = navController, startDestination = Routes.HOME) {
                 composable(Routes.HOME) {
                     HomeScreen(
-                        onNextClick = { navController.navigate(Routes.SECONDARY) },
+                        onNextClick = { navController.navigate(Routes.HOW_TO) },
                         backgroundUrl = backgroundUrl,
                         isLoading = isPreloading,
                         versionName = versionName,
@@ -78,6 +79,14 @@ fun App(versionName: String) {
                             formulaViewModel.reset()
                             accountViewModel.clearSelectedChild()
                         }
+                    )
+                }
+                composable(Routes.HOW_TO) {
+                    HowToScreen(
+                        onNextClick = { navController.navigate(Routes.SECONDARY) },
+                        onBackClick = { navController.popBackStack() },
+                        backgroundUrl = backgroundOtherUrl,
+                        logoUrl = logoUrl
                     )
                 }
                 composable(Routes.SECONDARY) {

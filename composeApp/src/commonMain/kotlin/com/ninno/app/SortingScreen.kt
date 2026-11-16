@@ -3,7 +3,11 @@ package com.ninno.app
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -196,6 +200,9 @@ private data class PendingSort(val note: DisplayNote, val liked: Boolean)
 
 private enum class DragSource { GRID, LIKED, DISLIKED }
 
+/** Bulle d'info sur une note : simple clic = nom, double clic = description. */
+private data class NoteInfo(val note: DisplayNote, val detailed: Boolean, val anchor: Rect)
+
 @Composable
 fun SortingScreen(
     title: String,
@@ -257,6 +264,10 @@ fun SortingScreen(
     var dragPosition by remember { mutableStateOf(Offset.Zero) }
     var likedBounds by remember { mutableStateOf<Rect?>(null) }
     var dislikedBounds by remember { mutableStateOf<Rect?>(null) }
+    var noteInfo by remember { mutableStateOf<NoteInfo?>(null) }
+    val showNoteInfo: (DisplayNote, Boolean, Rect) -> Unit = { note, detailed, anchor ->
+        noteInfo = NoteInfo(note, detailed, anchor)
+    }
     val selectedNotes = likedNotes + dislikedNotes
     val pendingNote = pendingSort?.note
     val remainingNotes = notes.filterNot { it in selectedNotes || it == pendingNote }
@@ -318,6 +329,14 @@ fun SortingScreen(
         draggedNote = null
         dragSource = null
     }
+
+    noteInfo?.let { info ->
+        LaunchedEffect(info) {
+            delay(if (info.detailed) 9000 else 2500)
+            noteInfo = null
+        }
+    }
+    LaunchedEffect(draggedNote) { if (draggedNote != null) noteInfo = null }
 
     val isOverLiked = draggedNote != null && likedBounds?.contains(dragPosition) == true
     val isOverDisliked = draggedNote != null && dislikedBounds?.contains(dragPosition) == true
@@ -384,15 +403,7 @@ fun SortingScreen(
                 ) {
                     PerfumeButtonGrid(
                         notes = remainingNotes,
-                        onNoteClick = { note ->
-                            if (pendingSort == null) {
-                                if (likedNotes.size < 2) {
-                                    pendingSort = PendingSort(note, liked = true)
-                                } else if (dislikedNotes.size < 2) {
-                                    pendingSort = PendingSort(note, liked = false)
-                                }
-                            }
-                        },
+                        onNoteInfo = showNoteInfo,
                         onDragStart = { note, startPosition ->
                             draggedNote = note
                             dragSource = DragSource.GRID
@@ -443,10 +454,7 @@ fun SortingScreen(
                                 notes = likedNotes,
                                 useHappyImage = true,
                                 imageSize = choiceImageSize,
-                                onNoteClick = { note ->
-                                    likedNotes = likedNotes - note
-                                    notifySelectionChanged()
-                                },
+                                onNoteInfo = showNoteInfo,
                                 isDragOver = isOverLiked,
                                 onBoundsChanged = { likedBounds = it },
                                 hiddenNote = if (dragSource == DragSource.LIKED) draggedNote else null,
@@ -486,10 +494,7 @@ fun SortingScreen(
                                 notes = dislikedNotes,
                                 useHappyImage = false,
                                 imageSize = choiceImageSize,
-                                onNoteClick = { note ->
-                                    dislikedNotes = dislikedNotes - note
-                                    notifySelectionChanged()
-                                },
+                                onNoteInfo = showNoteInfo,
                                 isDragOver = isOverDisliked,
                                 onBoundsChanged = { dislikedBounds = it },
                                 hiddenNote = if (dragSource == DragSource.DISLIKED) draggedNote else null,
@@ -520,15 +525,7 @@ fun SortingScreen(
                 ) {
                     PerfumeButtonGrid(
                         notes = remainingNotes,
-                        onNoteClick = { note ->
-                            if (pendingSort == null) {
-                                if (likedNotes.size < 2) {
-                                    pendingSort = PendingSort(note, liked = true)
-                                } else if (dislikedNotes.size < 2) {
-                                    pendingSort = PendingSort(note, liked = false)
-                                }
-                            }
-                        },
+                        onNoteInfo = showNoteInfo,
                         onDragStart = { note, startPosition ->
                             draggedNote = note
                             dragSource = DragSource.GRID
@@ -578,10 +575,7 @@ fun SortingScreen(
                                 notes = likedNotes,
                                 useHappyImage = true,
                                 imageSize = choiceImageSize,
-                                onNoteClick = { note ->
-                                    likedNotes = likedNotes - note
-                                    notifySelectionChanged()
-                                },
+                                onNoteInfo = showNoteInfo,
                                 isDragOver = isOverLiked,
                                 onBoundsChanged = { likedBounds = it },
                                 hiddenNote = if (dragSource == DragSource.LIKED) draggedNote else null,
@@ -621,10 +615,7 @@ fun SortingScreen(
                                 notes = dislikedNotes,
                                 useHappyImage = false,
                                 imageSize = choiceImageSize,
-                                onNoteClick = { note ->
-                                    dislikedNotes = dislikedNotes - note
-                                    notifySelectionChanged()
-                                },
+                                onNoteInfo = showNoteInfo,
                                 isDragOver = isOverDisliked,
                                 onBoundsChanged = { dislikedBounds = it },
                                 hiddenNote = if (dragSource == DragSource.DISLIKED) draggedNote else null,
@@ -648,6 +639,8 @@ fun SortingScreen(
                 }
             }
         }
+
+        noteInfo?.let { info -> NoteInfoBubble(info = info, fontSize = noteLabelSize) }
 
         draggedNote?.let { note ->
             var overlayOrigin by remember { mutableStateOf(Offset.Zero) }
@@ -778,7 +771,7 @@ private fun NoteImage(
 @Composable
 private fun PerfumeButtonGrid(
     notes: List<DisplayNote>,
-    onNoteClick: (DisplayNote) -> Unit,
+    onNoteInfo: (DisplayNote, Boolean, Rect) -> Unit,
     onDragStart: (DisplayNote, Offset) -> Unit,
     onDrag: (Offset) -> Unit,
     onDragEnd: () -> Unit,
@@ -817,18 +810,18 @@ private fun PerfumeButtonGrid(
                     ) {
                         if (note != null) {
                             val isBeingDragged = draggedNote == note
-                            var itemPosition by remember(note) { mutableStateOf(Offset.Zero) }
+                            var itemBounds by remember(note) { mutableStateOf(Rect.Zero) }
                             Box(
                                 modifier = Modifier
                                     .widthIn(max = maxImageSize)
                                     .fillMaxWidth()
                                     .aspectRatio(1f)
                                     .clip(RoundedCornerShape(16.dp))
-                                    .onGloballyPositioned { itemPosition = it.positionInRoot() }
+                                    .onGloballyPositioned { itemBounds = it.boundsInRoot() }
                                     .pointerInput(note) {
                                         detectDragGestures(
                                             onDragStart = { startOffset ->
-                                                onDragStart(note, itemPosition + startOffset)
+                                                onDragStart(note, itemBounds.topLeft + startOffset)
                                             },
                                             onDrag = { change, dragAmount ->
                                                 change.consume()
@@ -851,19 +844,10 @@ private fun PerfumeButtonGrid(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .fillMaxHeight()
-                                            .clickable { onNoteClick(note) }
+                                            .noteInfoClicks { detailed -> onNoteInfo(note, detailed, itemBounds) }
                                     )
                                 }
                             }
-                            Text(
-                                text = note.name,
-                                color = Color(0xFF2B2B2B),
-                                fontSize = noteLabelSize,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
                         } else {
                             Spacer(
                                 modifier = Modifier
@@ -885,7 +869,7 @@ private fun ColorSection(
     notes: List<DisplayNote>,
     useHappyImage: Boolean,
     imageSize: Dp,
-    onNoteClick: (DisplayNote) -> Unit,
+    onNoteInfo: (DisplayNote, Boolean, Rect) -> Unit,
     isDragOver: Boolean,
     onBoundsChanged: (Rect) -> Unit,
     hiddenNote: DisplayNote?,
@@ -909,16 +893,16 @@ private fun ColorSection(
         notes.forEach { note ->
             val remoteUrl = if (useHappyImage) note.happyImageUrl else note.sadImageUrl
             val fallbackRes = if (useHappyImage) note.fallback?.happyImageRes else note.fallback?.sadImageRes
-            var itemPosition by remember(note) { mutableStateOf(Offset.Zero) }
+            var itemBounds by remember(note) { mutableStateOf(Rect.Zero) }
             Box(
                 modifier = Modifier
                     .size(imageSize)
                     .clip(RoundedCornerShape(12.dp))
-                    .onGloballyPositioned { itemPosition = it.positionInRoot() }
+                    .onGloballyPositioned { itemBounds = it.boundsInRoot() }
                     .pointerInput(note) {
                         detectDragGestures(
                             onDragStart = { startOffset ->
-                                onDragStart(note, itemPosition + startOffset)
+                                onDragStart(note, itemBounds.topLeft + startOffset)
                             },
                             onDrag = { change, dragAmount ->
                                 change.consume()
@@ -936,9 +920,71 @@ private fun ColorSection(
                         contentDescription = note.name,
                         modifier = Modifier
                             .fillMaxSize()
-                            .clickable { onNoteClick(note) }
+                            .noteInfoClicks { detailed -> onNoteInfo(note, detailed, itemBounds) }
                     )
                 }
+            }
+        }
+    }
+}
+
+/** Simple clic -> nom de la note, double clic -> sa description. Le tri, lui, se fait au glisser-déposer. */
+@OptIn(ExperimentalFoundationApi::class)
+private fun Modifier.noteInfoClicks(onInfo: (detailed: Boolean) -> Unit): Modifier =
+    combinedClickable(onClick = { onInfo(false) }, onDoubleClick = { onInfo(true) })
+
+/** Bulle blanche posée au-dessus de la note cliquée (en dessous s'il n'y a pas la place), sans sortir de l'écran. */
+@Composable
+private fun NoteInfoBubble(info: NoteInfo, fontSize: TextUnit) {
+    var overlayOrigin by remember { mutableStateOf(Offset.Zero) }
+    var overlaySize by remember { mutableStateOf(IntSize.Zero) }
+    var bubbleSize by remember(info) { mutableStateOf(IntSize.Zero) }
+    val gapPx = with(androidx.compose.ui.platform.LocalDensity.current) { 8.dp.toPx() }
+    val description = info.note.description
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .onGloballyPositioned {
+                overlayOrigin = it.positionInRoot()
+                overlaySize = it.size
+            }
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .onSizeChanged { bubbleSize = it }
+                .offset {
+                    val anchor = info.anchor.translate(-overlayOrigin)
+                    val maxX = (overlaySize.width - bubbleSize.width).coerceAtLeast(0).toFloat()
+                    val x = (anchor.center.x - bubbleSize.width / 2f).coerceIn(0f, maxX)
+                    val above = anchor.top - gapPx - bubbleSize.height
+                    val y = if (above >= 0f) above else anchor.bottom + gapPx
+                    IntOffset(x.roundToInt(), y.roundToInt())
+                }
+                .widthIn(max = if (info.detailed) 340.dp else 260.dp)
+                .shadow(8.dp, RoundedCornerShape(20.dp))
+                .background(Color.White, RoundedCornerShape(20.dp))
+                .border(2.dp, Color(0xFF3B1E5C).copy(alpha = 0.85f), RoundedCornerShape(20.dp))
+                .padding(horizontal = 18.dp, vertical = 12.dp)
+        ) {
+            // Double clic : la description seule (le nom, si la note n'en a pas encore)
+            if (info.detailed && description != null) {
+                Text(
+                    text = description,
+                    color = Color(0xFF2B1B3D),
+                    fontSize = fontSize,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            } else {
+                Text(
+                    text = info.note.name,
+                    color = Color(0xFF3B1E5C),
+                    fontSize = (fontSize.value * 1.3f).sp,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
             }
         }
     }

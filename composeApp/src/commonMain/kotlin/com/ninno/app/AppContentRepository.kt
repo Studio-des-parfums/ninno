@@ -7,6 +7,8 @@ import com.ninno.app.network.RemoteNote
 
 data class DisplayNote(
     val name: String,
+    /** Description pour les enfants (bulle au double-clic) ; null = on n'affiche que le nom. */
+    val description: String? = null,
     val imageUrl: String?,
     val happyImageUrl: String?,
     val sadImageUrl: String?,
@@ -38,6 +40,7 @@ private fun List<RemoteNote>.toDisplayNotes(type: String): List<DisplayNote> {
     return filter { it.type == type }.map { note ->
         DisplayNote(
             name = note.name,
+            description = note.description?.takeIf { it.isNotBlank() },
             imageUrl = note.imageUrl,
             happyImageUrl = note.happyImageUrl,
             sadImageUrl = note.sadImageUrl,
