@@ -7,6 +7,7 @@ import com.ninno.app.network.AuthApiClient
 import com.ninno.app.network.ChildDto
 import com.ninno.app.network.ParentDto
 import com.ninno.app.network.SerialStatus
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,6 +34,17 @@ class AccountViewModel : ViewModel() {
 
     private var token: String? = TokenStorage.load()
 
+    /** Langue de Zoé : conservée entre les sessions et au changement d'enfant. */
+    private val _language = MutableStateFlow(Language.fromCode(LanguageStorage.load()))
+    val language: StateFlow<Language> = _language.asStateFlow()
+
+    private fun strings() = accountStrings(_language.value)
+
+    fun setLanguage(language: Language) {
+        _language.value = language
+        LanguageStorage.save(language.code)
+    }
+
     init {
         val saved = token
         if (saved == null) {
@@ -55,9 +67,9 @@ class AccountViewModel : ViewModel() {
             SerialStatus.AVAILABLE -> _state.value = _state.value.copy(step = AuthStep.REGISTER, serial = serial)
             SerialStatus.USED -> _state.value = _state.value.copy(
                 step = AuthStep.LOGIN,
-                info = "Ce coffret a déjà été activé. Connecte-toi avec le compte parent."
+                info = strings().boxAlreadyUsed
             )
-            SerialStatus.UNKNOWN -> fail("Numéro de série inconnu. Vérifie la saisie.")
+            SerialStatus.UNKNOWN -> fail(strings().unknownSerial)
         }
     }
 
@@ -117,10 +129,15 @@ class AccountViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 block()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: ApiException) {
-                fail(e.message ?: "Erreur")
-            } catch (e: Exception) {
-                fail("Impossible de joindre le serveur. Réessaie dans un instant.")
+                fail(e.message ?: strings().error(e.status))
+            } catch (e: Throwable) {
+                // Sur le web (Wasm), une erreur réseau est une JsException : un Throwable, pas une Exception.
+                // On affiche toujours un message, quelle que soit l'erreur.
+                println("[Ninno] Erreur de connexion : $e")
+                fail(strings().serverUnreachable)
             } finally {
                 _state.value = _state.value.copy(busy = false)
             }

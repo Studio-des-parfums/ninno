@@ -14,11 +14,7 @@ fun FifthScreen(
 ) {
     CardScreen(
         backgroundRes = Res.drawable.bg_home2,
-        messages = listOf(
-            "Ensuite, la note de cœur : le caractère.",
-            "Sens, et choisis les 2 meilleures puis celle que tu n'aimes pas.",
-            "C'est la ligne du milieu."
-        ),
+        messages = LocalStrings.current.fifth,
         onNextClick = onNextClick,
         onBackClick = onBackClick,
         backgroundUrl = backgroundUrl,

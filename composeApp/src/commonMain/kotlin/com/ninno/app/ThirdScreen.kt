@@ -14,12 +14,7 @@ fun ThirdScreen(
 ) {
     CardScreen(
         backgroundRes = Res.drawable.bg_home2,
-        messages = listOf(
-            "Un parfum est composé de :",
-            "la note de tête,",
-            "la note de cœur,",
-            "et la note de fond."
-        ),
+        messages = LocalStrings.current.third,
         onNextClick = onNextClick,
         onBackClick = onBackClick,
         backgroundUrl = backgroundUrl,

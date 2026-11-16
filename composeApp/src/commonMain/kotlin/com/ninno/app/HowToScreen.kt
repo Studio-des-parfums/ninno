@@ -15,7 +15,7 @@ fun HowToScreen(
 ) {
     CardScreen(
         backgroundRes = Res.drawable.bg_home2,
-        messages = listOf("Avant de commencer, voici quelques infos !"),
+        messages = listOf(LocalStrings.current.howToIntro),
         onNextClick = onNextClick,
         onBackClick = onBackClick,
         backgroundUrl = backgroundUrl,

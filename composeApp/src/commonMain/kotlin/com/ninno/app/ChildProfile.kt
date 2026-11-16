@@ -28,9 +28,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /** Genre de l'enfant, tel qu'échangé avec le backend ("girl" / "boy"). */
-enum class ChildGender(val apiValue: String, val label: String, val color: Color, val icon: ImageVector) {
-    GIRL("girl", "Fille", Color(0xFFEC4899), Icons.Filled.Female),
-    BOY("boy", "Garçon", Color(0xFF3B82F6), Icons.Filled.Male);
+enum class ChildGender(val apiValue: String, val color: Color, val icon: ImageVector) {
+    GIRL("girl", Color(0xFFEC4899), Icons.Filled.Female),
+    BOY("boy", Color(0xFF3B82F6), Icons.Filled.Male);
+
+    fun label(t: AccountStrings): String = if (this == GIRL) t.girl else t.boy
 
     companion object {
         fun fromApi(value: String?): ChildGender? = entries.firstOrNull { it.apiValue == value }
@@ -71,7 +73,7 @@ fun GenderPicker(selected: ChildGender?, onSelect: (ChildGender) -> Unit) {
                     .padding(vertical = 12.dp)
             ) {
                 Icon(gender.icon, contentDescription = null, tint = if (active) Color.White else gender.color, modifier = Modifier.size(32.dp))
-                Text(gender.label, color = if (active) Color.White else gender.color, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text(gender.label(accountStringsCurrent), color = if (active) Color.White else gender.color, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -85,10 +87,10 @@ fun AgePicker(age: Int?, color: Color, onChange: (Int) -> Unit) {
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("Âge", color = color, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 16.dp))
+        Text(accountStringsCurrent.age, color = color, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 16.dp))
         StepButton("−", color, enabled = age != null && age > MIN_CHILD_AGE) { onChange((age ?: MIN_CHILD_AGE) - 1) }
         Text(
-            if (age == null) "?" else "$age ans",
+            if (age == null) "?" else accountStringsCurrent.yearsOld(age),
             color = color,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,

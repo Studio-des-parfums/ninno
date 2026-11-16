@@ -14,9 +14,7 @@ fun SecondaryScreen(
 ) {
     CardScreen(
         backgroundRes = Res.drawable.bg_home2,
-        messages = listOf(
-            "Un parfum est un mélange d'odeurs, d'alcool et un peu d'eau."
-        ),
+        messages = LocalStrings.current.secondary,
         onNextClick = onNextClick,
         onBackClick = onBackClick,
         backgroundUrl = backgroundUrl,

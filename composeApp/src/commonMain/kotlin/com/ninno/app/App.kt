@@ -54,6 +54,8 @@ fun App(versionName: String) {
 
             val accountViewModel: AccountViewModel = viewModel { AccountViewModel() }
             val account by accountViewModel.state.collectAsState()
+            val language by accountViewModel.language.collectAsState()
+            val childGender = ChildGender.fromApi(account.selectedChild?.gender)
 
             LaunchedEffect(account.parent, account.selectedChild) {
                 formulaViewModel.setPlayer(accountViewModel.currentToken(), account.selectedChild?.id)
@@ -65,8 +67,12 @@ fun App(versionName: String) {
                 LocalLogoUrl provides content?.logoUrl,
                 LocalPartnerLogoUrl provides content?.partnerLogoUrl,
                 LocalMascotUrl provides content?.mascotUrl,
-                LocalChildGender provides ChildGender.fromApi(account.selectedChild?.gender)
+                LocalChildGender provides childGender,
+                LocalLanguage provides language,
+                LocalStrings provides zoeStrings(language, childGender)
             ) {
+            // Toujours chargée : « العربية » est affiché dans le sélecteur de langue
+            ArabicFontFallback()
             // Accès réservé : numéro de série du coffret -> compte parent -> choix de l'enfant.
             when {
                 account.restoring -> HomeScreen(onNextClick = {}, backgroundUrl = backgroundUrl, isLoading = true, versionName = versionName)
@@ -121,7 +127,7 @@ fun App(versionName: String) {
                 }
                 composable(Routes.SORTING_TOP) {
                     SortingScreen(
-                        title = "Note de tête",
+                        title = LocalStrings.current.topNote,
                         notes = displayTopNotes,
                         onSelectionChanged = { liked, disliked ->
                             formulaViewModel.recordChoice(NoteCategory.TOP, liked, disliked)
@@ -142,7 +148,7 @@ fun App(versionName: String) {
                 }
                 composable(Routes.SORTING_HEART) {
                     SortingScreen(
-                        title = "Note de cœur",
+                        title = LocalStrings.current.heartNote,
                         notes = displayHeartNotes,
                         onSelectionChanged = { liked, disliked ->
                             formulaViewModel.recordChoice(NoteCategory.HEART, liked, disliked)
@@ -163,7 +169,7 @@ fun App(versionName: String) {
                 }
                 composable(Routes.SORTING_BASE) {
                     SortingScreen(
-                        title = "Note de fond",
+                        title = LocalStrings.current.baseNote,
                         notes = displayBaseNotes,
                         onSelectionChanged = { liked, disliked ->
                             formulaViewModel.recordChoice(NoteCategory.BASE, liked, disliked)
