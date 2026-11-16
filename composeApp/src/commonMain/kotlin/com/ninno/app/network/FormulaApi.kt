@@ -28,10 +28,19 @@ data class FormulaRequest(
 )
 
 @Serializable
+data class FormulaNoteDto(
+    val name: String,
+    /** "top", "heart" ou "base" */
+    val type: String,
+    val percent: Double,
+    /** Quantité en mL par volume de flacon : clé "10", "30", "50". */
+    val ml: Map<String, Double>
+)
+
+@Serializable
 data class FormulaResponse(
-    val topNotes: List<String>,
-    val heartNotes: List<String>,
-    val baseNotes: List<String>,
+    val volumes: List<Int>,
+    val notes: List<FormulaNoteDto>,
     val description: String
 )
 

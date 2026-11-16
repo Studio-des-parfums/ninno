@@ -24,12 +24,23 @@ data class PerfumeFormula(
     val baseChoice: NoteChoice? = null
 )
 
-data class GeneratedFormula(
-    val topNotes: List<String>,
-    val heartNotes: List<String>,
-    val baseNotes: List<String>,
-    val description: String
+data class FormulaNote(
+    val name: String,
+    val category: NoteCategory,
+    /** Quantité en mL pour chaque volume de flacon (10, 30, 50). */
+    val mlByVolume: Map<Int, Double>
 )
+
+data class GeneratedFormula(
+    val volumes: List<Int>,
+    val notes: List<FormulaNote>,
+    val description: String
+) {
+    fun notesOf(category: NoteCategory) = notes.filter { it.category == category }
+}
+
+/** Volume de flacon sélectionné par défaut. */
+const val DEFAULT_VOLUME_ML = 30
 
 sealed interface FormulaUiState {
     data object Idle : FormulaUiState
@@ -69,6 +80,10 @@ class PerfumeFormulaViewModel : ViewModel() {
             _uiState.value = FormulaUiState.Error("Réponses incomplètes")
             return
         }
+        if (top.liked.isEmpty() && heart.liked.isEmpty() && base.liked.isEmpty()) {
+            _uiState.value = FormulaUiState.Error("Tu n'as aimé aucune note : recommence pour créer ton parfum !")
+            return
+        }
 
         _uiState.value = FormulaUiState.Loading
         viewModelScope.launch {
@@ -82,9 +97,20 @@ class PerfumeFormulaViewModel : ViewModel() {
                 )
                 _uiState.value = FormulaUiState.Success(
                     GeneratedFormula(
-                        topNotes = response.topNotes,
-                        heartNotes = response.heartNotes,
-                        baseNotes = response.baseNotes,
+                        volumes = response.volumes,
+                        notes = response.notes.mapNotNull { note ->
+                            val category = when (note.type) {
+                                "top" -> NoteCategory.TOP
+                                "heart" -> NoteCategory.HEART
+                                "base" -> NoteCategory.BASE
+                                else -> return@mapNotNull null
+                            }
+                            FormulaNote(
+                                name = note.name,
+                                category = category,
+                                mlByVolume = note.ml.mapNotNull { (k, v) -> k.toIntOrNull()?.let { it to v } }.toMap()
+                            )
+                        },
                         description = response.description
                     )
                 )
