@@ -18,6 +18,12 @@ server {
         add_header Cache-Control "no-cache";
     }
 
+    # ninno.js n'a pas de hash dans son nom et référence le .wasm (lui, hashé) :
+    # il doit être revalidé à chaque chargement, sinon l'ancien build reste affiché.
+    location = /ninno.js {
+        add_header Cache-Control "no-cache";
+    }
+
     location / {
         try_files $uri $uri/ /index.html;
     }
