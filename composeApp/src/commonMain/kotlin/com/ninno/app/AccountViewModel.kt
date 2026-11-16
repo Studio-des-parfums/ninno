@@ -79,6 +79,9 @@ class AccountViewModel : ViewModel() {
         onDone()
     }
 
+    /** Jeton de session du parent, pour les appels qui identifient l'enfant (formule). */
+    fun currentToken(): String? = token
+
     fun selectChild(child: ChildDto) {
         _state.value = _state.value.copy(selectedChild = child)
     }

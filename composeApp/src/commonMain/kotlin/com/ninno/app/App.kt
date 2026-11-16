@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -53,6 +54,10 @@ fun App(versionName: String) {
 
             val accountViewModel: AccountViewModel = viewModel { AccountViewModel() }
             val account by accountViewModel.state.collectAsState()
+
+            LaunchedEffect(account.parent, account.selectedChild) {
+                formulaViewModel.setPlayer(accountViewModel.currentToken(), account.selectedChild?.id)
+            }
 
             val navController = rememberNavController()
             // Logos configurés dans sdp-dashboard, lus par ScreenBackground / PartnerLogo

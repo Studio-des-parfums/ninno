@@ -54,6 +54,15 @@ class PerfumeFormulaViewModel : ViewModel() {
     private val _uiState = MutableStateFlow<FormulaUiState>(FormulaUiState.Idle)
     val uiState: StateFlow<FormulaUiState> = _uiState.asStateFlow()
 
+    /** Parent connecté et enfant qui joue, transmis avec la demande de formule. */
+    private var token: String? = null
+    private var childId: Int? = null
+
+    fun setPlayer(token: String?, childId: Int?) {
+        this.token = token
+        this.childId = childId
+    }
+
     fun reset() {
         _formula.value = PerfumeFormula()
         _uiState.value = FormulaUiState.Idle
@@ -89,8 +98,10 @@ class PerfumeFormulaViewModel : ViewModel() {
                     FormulaRequest(
                         top = NoteChoiceDto(top.liked, top.disliked),
                         heart = NoteChoiceDto(heart.liked, heart.disliked),
-                        base = NoteChoiceDto(base.liked, base.disliked)
-                    )
+                        base = NoteChoiceDto(base.liked, base.disliked),
+                        childId = childId
+                    ),
+                    token
                 )
                 _uiState.value = FormulaUiState.Success(
                     GeneratedFormula(
