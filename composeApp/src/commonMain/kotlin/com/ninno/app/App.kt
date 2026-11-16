@@ -64,7 +64,8 @@ fun App(versionName: String) {
             CompositionLocalProvider(
                 LocalLogoUrl provides content?.logoUrl,
                 LocalPartnerLogoUrl provides content?.partnerLogoUrl,
-                LocalMascotUrl provides content?.mascotUrl
+                LocalMascotUrl provides content?.mascotUrl,
+                LocalChildGender provides ChildGender.fromApi(account.selectedChild?.gender)
             ) {
             // Accès réservé : numéro de série du coffret -> compte parent -> choix de l'enfant.
             when {

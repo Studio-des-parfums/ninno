@@ -12,7 +12,13 @@ import io.ktor.http.isSuccess
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ChildDto(val id: Int, val firstName: String)
+data class ChildDto(
+    val id: Int,
+    val firstName: String,
+    /** "girl" / "boy", null pour un enfant inscrit avant l'ajout du genre. */
+    val gender: String? = null,
+    val age: Int? = null
+)
 
 @Serializable
 data class ParentDto(val id: Int, val email: String, val children: List<ChildDto> = emptyList())
@@ -27,13 +33,20 @@ private data class SerialCheckRequest(val serial: String)
 private data class SerialCheckResponse(val status: String)
 
 @Serializable
-private data class RegisterRequest(val serial: String, val email: String, val password: String, val childFirstName: String)
+private data class RegisterRequest(
+    val serial: String,
+    val email: String,
+    val password: String,
+    val childFirstName: String,
+    val childGender: String,
+    val childAge: Int
+)
 
 @Serializable
 private data class LoginRequest(val email: String, val password: String)
 
 @Serializable
-private data class AddChildRequest(val serial: String, val childFirstName: String)
+private data class AddChildRequest(val serial: String, val childFirstName: String, val childGender: String, val childAge: Int)
 
 @Serializable
 private data class ErrorResponse(val error: String = "")
@@ -66,10 +79,10 @@ object AuthApiClient {
         }
     }
 
-    suspend fun register(serial: String, email: String, password: String, childFirstName: String): AuthResponse =
+    suspend fun register(serial: String, email: String, password: String, childFirstName: String, childGender: String, childAge: Int): AuthResponse =
         http.post("$BASE_URL/auth/register") {
             contentType(ContentType.Application.Json)
-            setBody(RegisterRequest(serial, email, password, childFirstName))
+            setBody(RegisterRequest(serial, email, password, childFirstName, childGender, childAge))
         }.bodyOrThrow()
 
     suspend fun login(email: String, password: String): AuthResponse =
@@ -81,10 +94,10 @@ object AuthApiClient {
     suspend fun me(token: String): ParentDto =
         http.get("$BASE_URL/me") { bearerAuth(token) }.bodyOrThrow()
 
-    suspend fun addChild(token: String, serial: String, childFirstName: String): ChildDto =
+    suspend fun addChild(token: String, serial: String, childFirstName: String, childGender: String, childAge: Int): ChildDto =
         http.post("$BASE_URL/children") {
             bearerAuth(token)
             contentType(ContentType.Application.Json)
-            setBody(AddChildRequest(serial, childFirstName))
+            setBody(AddChildRequest(serial, childFirstName, childGender, childAge))
         }.bodyOrThrow()
 }
