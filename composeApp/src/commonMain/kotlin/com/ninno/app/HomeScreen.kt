@@ -1,5 +1,7 @@
 package com.ninno.app
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -7,18 +9,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ninno.app.resources.Res
@@ -33,10 +35,47 @@ import com.ninno.app.ui.rememberIsLandscape
 import com.ninno.app.ui.rememberUseStackedLayout
 import com.ninno.app.ui.screenPaddingFor
 
-// Couleurs du titre : foncées avec un halo blanc pour rester lisibles sur un fond clair
+// Titre posé sur un bandeau blanc translucide cerclé de violet : lisible quel que soit le fond configuré
 private val TitleColor = Color(0xFF3B1E5C)
-private val SubtitleColor = Color(0xFF00897B)
-private val TitleGlow = Shadow(color = Color.White, offset = Offset(0f, 0f), blurRadius = 16f)
+private val SubtitleColor = Color(0xFF00796B)
+private val BannerBorder = Color(0xFF3B1E5C)
+
+@Composable
+private fun TitleBanner(titleSize: TextUnit, withSize: TextUnit, subtitleSize: TextUnit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clip(RoundedCornerShape(28.dp))
+            .background(Color.White.copy(alpha = 0.88f))
+            .border(2.dp, BannerBorder.copy(alpha = 0.85f), RoundedCornerShape(28.dp))
+            .padding(horizontal = 28.dp, vertical = 14.dp)
+    ) {
+        Text(
+            text = "Crée ton parfum",
+            color = TitleColor,
+            fontSize = titleSize,
+            fontWeight = FontWeight.Bold,
+            fontFamily = FontFamily.SansSerif,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = "avec",
+            color = TitleColor,
+            fontSize = withSize,
+            fontWeight = FontWeight.Bold,
+            fontFamily = FontFamily.SansSerif,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = "Zoé la taupe",
+            color = SubtitleColor,
+            fontSize = subtitleSize,
+            fontWeight = FontWeight.Bold,
+            fontFamily = FontFamily.SansSerif,
+            textAlign = TextAlign.Center
+        )
+    }
+}
 
 @Composable
 fun HomeScreen(onNextClick: () -> Unit, backgroundUrl: String? = null, isLoading: Boolean = false, versionName: String = "") {
@@ -80,35 +119,7 @@ fun HomeScreen(onNextClick: () -> Unit, backgroundUrl: String? = null, isLoading
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
-                    Text(
-                        text = "Crée ton parfum",
-                        color = TitleColor,
-                        fontSize = titleSize,
-                        style = TextStyle(shadow = TitleGlow),
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.SansSerif,
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        text = "avec",
-                        color = TitleColor,
-                        fontSize = withSize,
-                        style = TextStyle(shadow = TitleGlow),
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.SansSerif,
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        text = "Zoé la taupe",
-                        color = SubtitleColor,
-                        fontSize = subtitleSize,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.SansSerif,
-                        textAlign = TextAlign.Center,
-                        style = TextStyle(
-                            shadow = TitleGlow
-                        )
-                    )
+                    TitleBanner(titleSize = titleSize, withSize = withSize, subtitleSize = subtitleSize)
                     CircularProgressIndicator(
                         modifier = Modifier.size(48.dp),
                         color = Color.White,
@@ -128,35 +139,7 @@ fun HomeScreen(onNextClick: () -> Unit, backgroundUrl: String? = null, isLoading
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "Crée ton parfum",
-                        color = TitleColor,
-                        fontSize = titleSize,
-                        style = TextStyle(shadow = TitleGlow),
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.SansSerif,
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        text = "avec",
-                        color = TitleColor,
-                        fontSize = withSize,
-                        style = TextStyle(shadow = TitleGlow),
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.SansSerif,
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        text = "Zoé la taupe",
-                        color = SubtitleColor,
-                        fontSize = subtitleSize,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.SansSerif,
-                        textAlign = TextAlign.Center,
-                        style = TextStyle(
-                            shadow = TitleGlow
-                        )
-                    )
+                    TitleBanner(titleSize = titleSize, withSize = withSize, subtitleSize = subtitleSize)
                 }
             }
 

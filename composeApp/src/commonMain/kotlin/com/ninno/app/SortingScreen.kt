@@ -137,6 +137,8 @@ import com.ninno.app.resources.note_vanille
 import com.ninno.app.resources.note_vanille_happy
 import com.ninno.app.resources.note_vanille_sad
 import com.ninno.app.ui.DeviceSize
+import androidx.compose.runtime.mutableFloatStateOf
+import com.ninno.app.ui.MainLogoBottom
 import com.ninno.app.ui.PartnerLogo
 import com.ninno.app.ui.NavBackButton
 import com.ninno.app.ui.NavForwardButton
@@ -334,6 +336,8 @@ fun SortingScreen(
         }
     }
 
+    var titleBottomPx by remember { mutableFloatStateOf(0f) }
+
     ScreenBackground(backgroundRes = Res.drawable.bg_home2, backgroundUrl = backgroundUrl, modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -360,7 +364,16 @@ fun SortingScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = sectionSpacing)
+                    .onGloballyPositioned { titleBottomPx = it.positionInRoot().y + it.size.height }
             )
+
+            // Mise en page large : la colonne « J'aime / Je n'aime pas » est en haut à droite, sous le logo principal.
+            val density = androidx.compose.ui.platform.LocalDensity.current
+            val logoClearance = with(density) {
+                (MainLogoBottom.toPx() + 8.dp.toPx() - titleBottomPx - sectionSpacing.toPx())
+                    .coerceAtLeast(0f)
+                    .toDp()
+            }
 
             if (useStackedLayout) {
                 Column(
@@ -541,6 +554,7 @@ fun SortingScreen(
                     Column(
                         modifier = Modifier
                             .weight(1f)
+                            .padding(top = logoClearance)
                             .padding(gridPadding),
                         verticalArrangement = Arrangement.spacedBy(sectionSpacing)
                     ) {

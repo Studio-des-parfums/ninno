@@ -72,6 +72,11 @@ fun screenPaddingFor(deviceSize: DeviceSize): Dp = when (deviceSize) {
     DeviceSize.EXPANDED -> 24.dp
 }
 
+/** Encombrement du logo principal (carré) en haut à droite : les écrans s'en servent pour ne pas passer dessous. */
+val MainLogoTopMargin = 12.dp
+val MainLogoWidth = 130.dp
+val MainLogoBottom = MainLogoTopMargin + MainLogoWidth
+
 /** Logo principal, en haut à droite (sdp-dashboard → « Logo »). null = rien d'affiché. */
 val LocalLogoUrl = staticCompositionLocalOf<String?> { null }
 
@@ -116,8 +121,8 @@ fun ScreenBackground(
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = 12.dp, end = 12.dp)
-                    .width(130.dp)
+                    .padding(top = MainLogoTopMargin, end = 12.dp)
+                    .width(MainLogoWidth)
             )
         }
         content()
