@@ -32,14 +32,14 @@ data class FormulaNoteDto(
     val name: String,
     /** "top", "heart" ou "base" */
     val type: String,
-    val percent: Double,
-    /** Quantité en mL par volume de flacon : clé "10", "30", "50". */
-    val ml: Map<String, Double>
+    /** Quantité en mL pour le flacon configuré. */
+    val ml: Double
 )
 
 @Serializable
 data class FormulaResponse(
-    val volumes: List<Int>,
+    /** Volume du flacon (mL), réglé depuis sdp-dashboard. */
+    val volumeMl: Int,
     val notes: List<FormulaNoteDto>,
     val description: String
 )

@@ -17,13 +17,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -147,11 +142,16 @@ private fun FormulaNotesCard(state: FormulaUiState, modifier: Modifier = Modifie
             }
             is FormulaUiState.Success -> {
                 val formula = state.formula
-                var volume by rememberSaveable { mutableIntStateOf(DEFAULT_VOLUME_ML) }
-                VolumeSelector(volumes = formula.volumes, selected = volume, onSelect = { volume = it })
-                NoteGroup("Notes de tête", formula.notesOf(NoteCategory.TOP), volume, TopColor)
-                NoteGroup("Notes de cœur", formula.notesOf(NoteCategory.HEART), volume, HeartColor)
-                NoteGroup("Notes de fond", formula.notesOf(NoteCategory.BASE), volume, BaseColor)
+                Text(
+                    text = "Pour un flacon de ${formula.volumeMl} mL",
+                    color = TextDark.copy(alpha = 0.75f),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center
+                )
+                NoteGroup("Notes de tête", formula.notesOf(NoteCategory.TOP), TopColor)
+                NoteGroup("Notes de cœur", formula.notesOf(NoteCategory.HEART), HeartColor)
+                NoteGroup("Notes de fond", formula.notesOf(NoteCategory.BASE), BaseColor)
             }
             is FormulaUiState.Error -> {
                 Text(
@@ -165,36 +165,6 @@ private fun FormulaNotesCard(state: FormulaUiState, modifier: Modifier = Modifie
     }
 }
 
-/** Choix du volume du flacon : met à jour la quantité de chaque note. */
-@Composable
-private fun VolumeSelector(volumes: List<Int>, selected: Int, onSelect: (Int) -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(50))
-            .background(TextDark.copy(alpha = 0.08f))
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        volumes.forEach { volume ->
-            val isSelected = volume == selected
-            Text(
-                text = "$volume mL",
-                color = if (isSelected) Color.White else TextDark,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(50))
-                    .background(if (isSelected) HeartColor else Color.Transparent)
-                    .clickable { onSelect(volume) }
-                    .padding(vertical = 10.dp)
-            )
-        }
-    }
-}
-
 /** 4.5 -> "4,5" ; 5.0 -> "5" */
 private fun formatMl(value: Double): String {
     val tenths = kotlin.math.round(value * 10).toLong()
@@ -202,7 +172,7 @@ private fun formatMl(value: Double): String {
 }
 
 @Composable
-private fun NoteGroup(label: String, notes: List<FormulaNote>, volume: Int, color: Color) {
+private fun NoteGroup(label: String, notes: List<FormulaNote>, color: Color) {
     if (notes.isEmpty()) return
     Column(
         modifier = Modifier
@@ -223,7 +193,7 @@ private fun NoteGroup(label: String, notes: List<FormulaNote>, volume: Int, colo
                     modifier = Modifier.weight(1f)
                 )
                 Text(
-                    text = "${formatMl(note.mlByVolume[volume] ?: 0.0)} mL",
+                    text = "${formatMl(note.ml)} mL",
                     color = TextDark,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
