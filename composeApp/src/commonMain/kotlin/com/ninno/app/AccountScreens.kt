@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -192,6 +194,8 @@ private fun RegisterStep(state: AccountState, viewModel: AccountViewModel) {
     var password by remember { mutableStateOf("") }
     var confirmation by remember { mutableStateOf("") }
     var childName by remember { mutableStateOf("") }
+    var gender by remember { mutableStateOf<ChildGender?>(null) }
+    var age by remember { mutableStateOf<Int?>(null) }
     // Erreur affichée dès que la confirmation est saisie et diffère
     val mismatch = confirmation.isNotEmpty() && confirmation != password
     CardTitle("Créer le compte parent")
@@ -201,11 +205,14 @@ private fun RegisterStep(state: AccountState, viewModel: AccountViewModel) {
     Field(confirmation, { confirmation = it }, "Confirmer le mot de passe", KeyboardType.Password, password = true)
     if (mismatch) Text("Les mots de passe ne correspondent pas.", color = ErrorRed, fontSize = 14.sp)
     Field(childName, { childName = it }, "Prénom de l'enfant", capitalization = KeyboardCapitalization.Words)
+    GenderPicker(gender) { gender = it }
+    AgePicker(age, gender?.color ?: Ink) { age = it }
     Messages(state.error, state.info)
     PrimaryButton(
         "Créer le compte", state.busy,
-        enabled = email.isNotBlank() && password.length >= 8 && confirmation == password && childName.isNotBlank()
-    ) { viewModel.register(email, password, childName) }
+        enabled = email.isNotBlank() && password.length >= 8 && confirmation == password && childName.isNotBlank() &&
+            gender != null && age != null
+    ) { viewModel.register(email, password, childName, gender!!, age!!) }
     TextButton(onClick = { viewModel.goTo(AuthStep.SERIAL) }) { Text("Retour", color = Ink) }
 }
 
@@ -231,24 +238,31 @@ fun ChildrenScreen(viewModel: AccountViewModel, backgroundUrl: String?, onChildS
     var adding by remember { mutableStateOf(false) }
     var serial by remember { mutableStateOf("") }
     var childName by remember { mutableStateOf("") }
+    var gender by remember { mutableStateOf<ChildGender?>(null) }
+    var age by remember { mutableStateOf<Int?>(null) }
 
     AccountCard(backgroundUrl) {
         CardTitle(if (adding) "Ajouter un enfant" else "Qui joue ?")
         if (!adding) {
             parent.children.forEach { child ->
-                Text(
-                    child.firstName,
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
+                // Couleur et icône du genre (bleu garçon, rose fille), violet si inconnu
+                val childGender = ChildGender.fromApi(child.gender)
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp))
-                        .background(Ink)
+                        .background(childGender?.color ?: Ink)
                         .clickable { onChildSelected(child) }
                         .padding(vertical = 14.dp)
-                )
+                ) {
+                    childGender?.let {
+                        Icon(it.icon, contentDescription = it.label, tint = Color.White, modifier = Modifier.size(24.dp).padding(end = 4.dp))
+                    }
+                    Text(child.firstName, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    child.age?.let { Text("  · $it ans", color = Color.White.copy(alpha = 0.85f), fontSize = 16.sp) }
+                }
             }
             TextButton(onClick = { adding = true; viewModel.clearError() }) {
                 Text("+ Ajouter un enfant (nouveau coffret)", color = Ink)
@@ -258,9 +272,16 @@ fun ChildrenScreen(viewModel: AccountViewModel, backgroundUrl: String?, onChildS
             Text("Chaque enfant a besoin du numéro de série de son propre coffret.", color = Ink, textAlign = TextAlign.Center)
             SerialField(serial) { serial = it }
             Field(childName, { childName = it }, "Prénom de l'enfant", capitalization = KeyboardCapitalization.Words)
+            GenderPicker(gender) { gender = it }
+            AgePicker(age, gender?.color ?: Ink) { age = it }
             Messages(state.error, null)
-            PrimaryButton("Ajouter", state.busy, enabled = serial.length == SERIAL_DIGITS && childName.isNotBlank()) {
-                viewModel.addChild(serial, childName) { adding = false; serial = ""; childName = "" }
+            PrimaryButton(
+                "Ajouter", state.busy,
+                enabled = serial.length == SERIAL_DIGITS && childName.isNotBlank() && gender != null && age != null
+            ) {
+                viewModel.addChild(serial, childName, gender!!, age!!) {
+                    adding = false; serial = ""; childName = ""; gender = null; age = null
+                }
             }
             TextButton(onClick = { adding = false; viewModel.clearError() }) { Text("Annuler", color = Ink) }
         }

@@ -156,7 +156,7 @@ fun HomeScreen(
                     if (childName.isNullOrBlank()) "Coucou ! Moi, c'est Zoé la taupe."
                     else "Coucou $childName ! Moi, c'est Zoé la taupe.",
                     "Bienvenue au Studio des Parfums !",
-                    "Es-tu prêt à commencer ?"
+                    "Es-tu ${LocalChildGender.current.agree("prêt", "prête")} à commencer ?"
                 ),
                 // Plus petite qu'ailleurs : laisse respirer le titre d'accueil
                 heightFraction = 0.45f,

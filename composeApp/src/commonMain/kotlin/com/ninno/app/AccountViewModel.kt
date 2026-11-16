@@ -61,8 +61,8 @@ class AccountViewModel : ViewModel() {
         }
     }
 
-    fun register(email: String, password: String, childFirstName: String) = run {
-        val res = AuthApiClient.register(_state.value.serial, email, password, childFirstName)
+    fun register(email: String, password: String, childFirstName: String, gender: ChildGender, age: Int) = run {
+        val res = AuthApiClient.register(_state.value.serial, email, password, childFirstName, gender.apiValue, age)
         signedIn(res.token, res.parent)
     }
 
@@ -71,9 +71,9 @@ class AccountViewModel : ViewModel() {
         signedIn(res.token, res.parent)
     }
 
-    fun addChild(serial: String, childFirstName: String, onDone: () -> Unit) = run {
+    fun addChild(serial: String, childFirstName: String, gender: ChildGender, age: Int, onDone: () -> Unit) = run {
         val t = token ?: return@run
-        val child = AuthApiClient.addChild(t, serial, childFirstName)
+        val child = AuthApiClient.addChild(t, serial, childFirstName, gender.apiValue, age)
         val parent = _state.value.parent ?: return@run
         _state.value = _state.value.copy(parent = parent.copy(children = parent.children + child))
         onDone()
