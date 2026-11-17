@@ -73,6 +73,8 @@ fun CardScreen(
             Row(modifier = Modifier.fillMaxSize()) {
                 MascotWithBubbleAbove(
                     messages = messages,
+                    // À gauche des consignes : plus de place qu'en portrait, mascotte plus grande
+                    scale = 1.5f,
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()

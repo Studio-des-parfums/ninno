@@ -99,9 +99,9 @@ fun HomeScreen(
         DeviceSize.EXPANDED -> 70.sp
     }
     val withSize = when (deviceSize) {
-        DeviceSize.COMPACT -> if (useStackedLayout) 14.sp else 16.sp
-        DeviceSize.MEDIUM -> 18.sp
-        DeviceSize.EXPANDED -> 22.sp
+        DeviceSize.COMPACT -> if (useStackedLayout) 26.sp else 30.sp
+        DeviceSize.MEDIUM -> 36.sp
+        DeviceSize.EXPANDED -> 44.sp
     }
     val subtitleSize = when (deviceSize) {
         DeviceSize.COMPACT -> if (useStackedLayout) 24.sp else 32.sp
@@ -157,6 +157,7 @@ fun HomeScreen(
                 messages = listOf(strings.greeting(childName), strings.welcome, strings.readyToStart),
                 // Plus petite qu'ailleurs : laisse respirer le titre d'accueil
                 heightFraction = 0.45f,
+                centered = true,
                 modifier = Modifier.fillMaxSize()
             )
 

@@ -94,7 +94,11 @@ fun ScreenBackground(
     content: @Composable BoxScope.() -> Unit
 ) {
     Box(modifier = modifier.fillMaxSize()) {
-        if (backgroundUrl != null) {
+        // Vidéo (.mp4 / .webm) : jouée en boucle derrière le contenu ; sinon image
+        val videoShown = backgroundUrl != null && isVideoUrl(backgroundUrl) && BackgroundVideo(backgroundUrl)
+        if (videoShown) {
+            // Rien à dessiner : la vidéo est visible à travers le canvas
+        } else if (backgroundUrl != null && !isVideoUrl(backgroundUrl)) {
             AsyncImage(
                 model = backgroundUrl,
                 contentDescription = null,

@@ -4,6 +4,7 @@ import io.ktor.client.call.body
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
@@ -46,7 +47,10 @@ private data class RegisterRequest(
 private data class LoginRequest(val email: String, val password: String)
 
 @Serializable
-private data class AddChildRequest(val serial: String, val childFirstName: String, val childGender: String, val childAge: Int)
+private data class AddChildRequest(val childFirstName: String, val childGender: String, val childAge: Int)
+
+@Serializable
+private data class ChangePasswordRequest(val currentPassword: String, val newPassword: String)
 
 @Serializable
 private data class ErrorResponse(val error: String = "")
@@ -94,10 +98,18 @@ object AuthApiClient {
     suspend fun me(token: String): ParentDto =
         http.get("$BASE_URL/me") { bearerAuth(token) }.bodyOrThrow()
 
-    suspend fun addChild(token: String, serial: String, childFirstName: String, childGender: String, childAge: Int): ChildDto =
+    suspend fun addChild(token: String, childFirstName: String, childGender: String, childAge: Int): ChildDto =
         http.post("$BASE_URL/children") {
             bearerAuth(token)
             contentType(ContentType.Application.Json)
-            setBody(AddChildRequest(serial, childFirstName, childGender, childAge))
+            setBody(AddChildRequest(childFirstName, childGender, childAge))
         }.bodyOrThrow()
+
+    suspend fun changePassword(token: String, currentPassword: String, newPassword: String) {
+        http.put("$BASE_URL/me/password") {
+            bearerAuth(token)
+            contentType(ContentType.Application.Json)
+            setBody(ChangePasswordRequest(currentPassword, newPassword))
+        }.bodyOrThrow<Unit>()
+    }
 }
