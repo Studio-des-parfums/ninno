@@ -1,7 +1,7 @@
 package com.ninno.app
 
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -38,7 +38,9 @@ fun App(versionName: String) {
     NinnoTheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
+            // Transparent : chaque écran dessine son fond (ScreenBackground). Un fond opaque ici
+            // masquerait la vidéo de fond, placée derrière le canvas sur le web.
+            color = Color.Transparent
         ) {
             val formulaViewModel: PerfumeFormulaViewModel = viewModel { PerfumeFormulaViewModel() }
             val appContentViewModel: AppContentViewModel = viewModel { AppContentViewModel() }

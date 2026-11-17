@@ -25,6 +25,19 @@
 </head>
 <body>
     <canvas id="ComposeTarget"></canvas>
+    <script>
+        // Compose Web (1.7) efface le canvas en blanc opaque à chaque image, ce qui masque la
+        // vidéo de fond (#ninno-bg-video) placée derrière. On rend cet effacement transparent ;
+        // chaque écran dessine lui-même son fond (image), donc rien d'autre ne change.
+        [window.WebGL2RenderingContext, window.WebGLRenderingContext].forEach(function (Ctx) {
+            if (!Ctx) return;
+            var clearColor = Ctx.prototype.clearColor;
+            Ctx.prototype.clearColor = function (r, g, b, a) {
+                var opaqueWhite = r === 1 && g === 1 && b === 1 && a === 1;
+                return clearColor.call(this, r, g, b, opaqueWhite ? 0 : a);
+            };
+        });
+    </script>
     <script src="ninno.js"></script>
 </body>
 </html>
