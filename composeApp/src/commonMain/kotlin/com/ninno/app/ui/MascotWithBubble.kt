@@ -92,6 +92,8 @@ fun MascotWithBubble(
     pauseBetweenMessagesMs: Long = 700,
     /** Part de la hauteur de l'écran occupée par la mascotte. */
     heightFraction: Float = 0.6f,
+    /** true : mascotte et bulle centrées en bas de l'écran (accueil) ; false : en bas à gauche. */
+    centered: Boolean = false,
 ) {
     val displayed = rememberTypewriterText(messages, charDelayMs, pauseBetweenMessagesMs)
 
@@ -100,7 +102,11 @@ fun MascotWithBubble(
         val bubbleFont = if (maxWidth > 1000.dp) 22.sp else 16.sp
 
         Row(
-            modifier = Modifier.align(Alignment.BottomStart),
+            // Centré : la mascotte est fixée au milieu (décalage constant) ; la bulle s'étend à sa
+            // droite sans la faire bouger pendant que le texte s'écrit.
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(start = if (centered) ((maxWidth - mascotHeight) / 2).coerceAtLeast(0.dp) else 0.dp),
             verticalAlignment = Alignment.Top,
         ) {
             MascotImage(
@@ -216,12 +222,14 @@ fun MascotWithBubbleAbove(
     modifier: Modifier = Modifier,
     charDelayMs: Long = 35,
     pauseBetweenMessagesMs: Long = 600,
+    /** Agrandit la mascotte (1 = taille normale) ; utilisé quand elle est à gauche des consignes. */
+    scale: Float = 1f,
 ) {
     val displayed = rememberTypewriterText(messages, charDelayMs, pauseBetweenMessagesMs, startDelayMs = 400)
 
     BoxWithConstraints(modifier = modifier) {
         // Responsive : bornée par la hauteur ET la largeur dispo, jamais énorme sur grand écran
-        val mascotSize = minOf(maxHeight * 0.38f, maxWidth * 0.55f, 240.dp)
+        val mascotSize = minOf(maxHeight * 0.38f * scale, maxWidth * 0.55f * scale, 240.dp * scale, maxWidth, maxHeight)
         val bubbleFont = if (maxWidth > 500.dp) 20.sp else 16.sp
         val bubbleMaxWidth = minOf(maxWidth - mascotSize * 0.15f, 360.dp)
 
