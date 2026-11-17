@@ -4,6 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
+import com.ninno.app.network.ParentDto
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.foundation.layout.Arrangement
@@ -250,67 +253,139 @@ private fun LoginStep(state: AccountState, viewModel: AccountViewModel) {
     TextButton(onClick = { viewModel.goTo(AuthStep.SERIAL) }) { Text(t.newBox, color = Ink) }
 }
 
-/** Espace parent : choix de l'enfant qui joue, ajout d'un enfant avec un nouveau coffret. */
+/** Nombre maximum d'enfants par compte, aligné sur MAX_CHILDREN du backend. */
+const val MAX_CHILDREN = 6
+
+/** Vues de l'espace parent : liste des enfants, ajout d'un enfant, paramètres du compte. */
+private enum class ParentView { CHILDREN, ADD_CHILD, SETTINGS }
+
+/** Espace parent : choix de l'enfant qui joue, ajout d'un enfant (jusqu'à [MAX_CHILDREN]), paramètres. */
 @Composable
 fun ChildrenScreen(viewModel: AccountViewModel, backgroundUrl: String?, onChildSelected: (ChildDto) -> Unit) {
     val state by viewModel.state.collectAsState()
     val parent = state.parent ?: return
-    var adding by remember { mutableStateOf(false) }
-    var serial by remember { mutableStateOf("") }
-    var childName by remember { mutableStateOf("") }
-    var gender by remember { mutableStateOf<ChildGender?>(null) }
-    var age by remember { mutableStateOf<Int?>(null) }
+    var view by remember { mutableStateOf(ParentView.CHILDREN) }
+    fun open(target: ParentView) { view = target; viewModel.clearMessages() }
 
-    val language by viewModel.language.collectAsState()
     val t = accountStringsCurrent
     AccountCard(
         backgroundUrl,
-        header = if (adding) null else ({ LanguageSelect(language) { viewModel.setLanguage(it) } })
+        header = if (view == ParentView.CHILDREN) ({ SettingsButton { open(ParentView.SETTINGS) } }) else null
     ) {
-        CardTitle(if (adding) t.addChildTitle else t.whoPlays)
-        if (!adding) {
-            parent.children.forEach { child ->
-                // Couleur et icône du genre (bleu garçon, rose fille), violet si inconnu
-                val childGender = ChildGender.fromApi(child.gender)
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(childGender?.color ?: Ink)
-                        .clickable { onChildSelected(child) }
-                        .padding(vertical = 14.dp)
-                ) {
-                    childGender?.let {
-                        Icon(it.icon, contentDescription = it.label(t), tint = Color.White, modifier = Modifier.size(24.dp).padding(end = 4.dp))
-                    }
-                    Text(child.firstName, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    child.age?.let { Text("  · ${t.yearsOld(it)}", color = Color.White.copy(alpha = 0.85f), fontSize = 16.sp) }
-                }
-            }
-            TextButton(onClick = { adding = true; viewModel.clearError() }) {
-                Text(t.addChildLink, color = Ink)
-            }
-            TextButton(onClick = { viewModel.logout() }) { Text(t.logout(parent.email), color = Ink, fontSize = 13.sp) }
-        } else {
-            Text(t.eachChildNeedsSerial, color = Ink, textAlign = TextAlign.Center)
-            SerialField(serial) { serial = it }
-            Field(childName, { childName = it }, t.childFirstName, capitalization = KeyboardCapitalization.Words)
-            GenderPicker(gender) { gender = it }
-            AgePicker(age, gender?.color ?: Ink) { age = it }
-            Messages(state.error, null)
-            PrimaryButton(
-                t.add, state.busy,
-                enabled = serial.length == SERIAL_DIGITS && childName.isNotBlank() && gender != null && age != null
-            ) {
-                viewModel.addChild(serial, childName, gender!!, age!!) {
-                    adding = false; serial = ""; childName = ""; gender = null; age = null
-                }
-            }
-            TextButton(onClick = { adding = false; viewModel.clearError() }) { Text(t.cancel, color = Ink) }
+        when (view) {
+            ParentView.CHILDREN -> ChildrenList(parent, onChildSelected, onAdd = { open(ParentView.ADD_CHILD) }, onLogout = { viewModel.logout() })
+            ParentView.ADD_CHILD -> AddChildForm(state, viewModel, onClose = { open(ParentView.CHILDREN) })
+            ParentView.SETTINGS -> SettingsPanel(state, viewModel, onClose = { open(ParentView.CHILDREN) })
         }
     }
+}
+
+/** Engrenage en haut à droite, au-dessus de la carte : ouvre les paramètres du compte. */
+@Composable
+private fun SettingsButton(onClick: () -> Unit) {
+    Box(Modifier.widthIn(max = 420.dp).fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .shadow(6.dp, CircleShape)
+                .clip(CircleShape)
+                .background(Color.White)
+                .clickable(onClick = onClick)
+                .size(48.dp)
+        ) {
+            Icon(Icons.Filled.Settings, contentDescription = accountStringsCurrent.settings, tint = Ink, modifier = Modifier.size(26.dp))
+        }
+    }
+}
+
+@Composable
+private fun ColumnScope.ChildrenList(
+    parent: ParentDto,
+    onChildSelected: (ChildDto) -> Unit,
+    onAdd: () -> Unit,
+    onLogout: () -> Unit,
+) {
+    val t = accountStringsCurrent
+    CardTitle(t.whoPlays)
+    parent.children.forEach { child ->
+        // Couleur et icône du genre (bleu garçon, rose fille), violet si inconnu
+        val childGender = ChildGender.fromApi(child.gender)
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(childGender?.color ?: Ink)
+                .clickable { onChildSelected(child) }
+                .padding(vertical = 14.dp)
+        ) {
+            childGender?.let {
+                Icon(it.icon, contentDescription = it.label(t), tint = Color.White, modifier = Modifier.size(24.dp).padding(end = 4.dp))
+            }
+            Text(child.firstName, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            child.age?.let { Text("  · ${t.yearsOld(it)}", color = Color.White.copy(alpha = 0.85f), fontSize = 16.sp) }
+        }
+    }
+    // Limite de 6 enfants par compte (vérifiée aussi par le backend)
+    if (parent.children.size < MAX_CHILDREN) {
+        TextButton(onClick = onAdd) { Text(t.addChildLink, color = Ink) }
+    }
+    TextButton(onClick = onLogout) { Text(t.logout(parent.email), color = Ink, fontSize = 13.sp) }
+}
+
+@Composable
+private fun ColumnScope.AddChildForm(state: AccountState, viewModel: AccountViewModel, onClose: () -> Unit) {
+    var childName by remember { mutableStateOf("") }
+    var gender by remember { mutableStateOf<ChildGender?>(null) }
+    var age by remember { mutableStateOf<Int?>(null) }
+    val t = accountStringsCurrent
+    CardTitle(t.addChildTitle)
+    Field(childName, { childName = it }, t.childFirstName, capitalization = KeyboardCapitalization.Words)
+    GenderPicker(gender) { gender = it }
+    AgePicker(age, gender?.color ?: Ink) { age = it }
+    Messages(state.error, null)
+    PrimaryButton(t.add, state.busy, enabled = childName.isNotBlank() && gender != null && age != null) {
+        viewModel.addChild(childName, gender!!, age!!, onClose)
+    }
+    TextButton(onClick = onClose) { Text(t.cancel, color = Ink) }
+}
+
+/** Paramètres du compte : langue de Zoé et mot de passe. */
+@Composable
+private fun ColumnScope.SettingsPanel(state: AccountState, viewModel: AccountViewModel, onClose: () -> Unit) {
+    val language by viewModel.language.collectAsState()
+    var current by remember { mutableStateOf("") }
+    var newPassword by remember { mutableStateOf("") }
+    var confirmation by remember { mutableStateOf("") }
+    val t = accountStringsCurrent
+    val mismatch = confirmation.isNotEmpty() && confirmation != newPassword
+
+    CardTitle(t.settings)
+    SectionLabel(t.languageLabel)
+    LanguageSelect(language) { viewModel.setLanguage(it) }
+
+    SectionLabel(t.changePassword)
+    Field(current, { current = it }, t.currentPassword, KeyboardType.Password, password = true)
+    Field(newPassword, { newPassword = it }, t.newPassword, KeyboardType.Password, password = true)
+    Field(confirmation, { confirmation = it }, t.confirmPassword, KeyboardType.Password, password = true)
+    if (mismatch) Text(t.passwordsMismatch, color = ErrorRed, fontSize = 14.sp)
+    Messages(state.error, state.info)
+    PrimaryButton(
+        t.save, state.busy,
+        enabled = current.isNotBlank() && newPassword.length >= 8 && confirmation == newPassword
+    ) {
+        viewModel.changePassword(current, newPassword) { current = ""; newPassword = ""; confirmation = "" }
+    }
+    TextButton(onClick = onClose) { Text(t.back, color = Ink) }
+}
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text, color = Ink, fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+    )
 }
 
 /** Langue de Zoé : bouton drapeau + langue, qui déroule la liste de toutes les langues. */

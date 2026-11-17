@@ -83,12 +83,23 @@ class AccountViewModel : ViewModel() {
         signedIn(res.token, res.parent)
     }
 
-    fun addChild(serial: String, childFirstName: String, gender: ChildGender, age: Int, onDone: () -> Unit) = run {
+    fun addChild(childFirstName: String, gender: ChildGender, age: Int, onDone: () -> Unit) = run {
         val t = token ?: return@run
-        val child = AuthApiClient.addChild(t, serial, childFirstName, gender.apiValue, age)
+        val child = AuthApiClient.addChild(t, childFirstName, gender.apiValue, age)
         val parent = _state.value.parent ?: return@run
         _state.value = _state.value.copy(parent = parent.copy(children = parent.children + child))
         onDone()
+    }
+
+    fun changePassword(currentPassword: String, newPassword: String, onDone: () -> Unit) = run {
+        val t = token ?: return@run
+        AuthApiClient.changePassword(t, currentPassword, newPassword)
+        _state.value = _state.value.copy(info = strings().passwordChanged)
+        onDone()
+    }
+
+    fun clearMessages() {
+        _state.value = _state.value.copy(error = null, info = null)
     }
 
     /** Jeton de session du parent, pour les appels qui identifient l'enfant (formule). */
